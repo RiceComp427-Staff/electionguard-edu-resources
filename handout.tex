@@ -1,0 +1,546 @@
+%%%%%%%%%%%%%%%%
+% Set options
+
+\newcommand{\settitle}{Project 1: Cryptographic Voting}
+\newcommand{\course}{Comp427}
+\newcommand{\coursename}{Intro to Computer Security}
+\newcommand{\distdate}{February 12, 2021}
+\newcommand{\duedateA}{Friday, February 19}
+\newcommand{\duedateB}{Friday, February 26}
+
+%%%%%%%%%%%%%%%%
+
+\documentclass[letterpaper,12pt]{article}
+\usepackage{fullpage}
+\usepackage{fancyvrb}
+\usepackage[protrusion=true,expansion=auto]{microtype}
+\usepackage{color}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{mathptmx}
+\usepackage{textcomp}
+\usepackage[
+  breaklinks=true,colorlinks=true,linkcolor=black,%
+  citecolor=black,urlcolor=black,bookmarks=false,bookmarksopen=false,%
+  pdfauthor={\course},%
+  pdftitle={\settitle},%
+  pdftex]{hyperref}
+\urlstyle{sf}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{multicol}
+\def\textsb#1{{\fontseries{sb}\selectfont #1}}
+
+\newcommand{\problemsetdone}{\hfill$\Box{}$}
+
+\newcommand{\htitle}
+{
+    \vbox to 0.25in{}
+    \noindent\parbox{\textwidth}
+    {
+        \course\hfill \distdate\newline
+        \coursename\hfill 
+        \settitle \vspace*{-.5ex}\newline
+        \mbox{}\hrulefill\mbox{}
+    }
+    \vspace{8pt}
+    \begin{center}{\Large\bf{\settitle}}\end{center}
+}
+\newcommand{\handout}
+{
+    \thispagestyle{empty}
+    \markboth{}{}
+    \pagestyle{plain}
+    \htitle
+}
+
+\newcommand{\problemsetheader}
+{
+
+This project has two due dates: {\bf \duedateA} and {\bf \duedateB},
+both at {\bf 6\,p.m.}.  Late
+submissions are not accepted.  If you have a conflict due to travel,
+interviews, etc., please plan accordingly and turn in your homework
+early.
+
+\medskip
+
+This is a group project; you will work in \textbf{teams of two} and
+submit one project per team. Please find a partner as soon as
+possible. If have trouble forming a team, post to the relevant Piazza
+thread. The final exam will cover project material, so you and your
+partner should collaborate on each part.
+
+\medskip
+
+The code and other answers your group submits must be entirely the
+work of your group, and you are bound by the Honor Code. You may
+consult with other students about the conceptualization of the project
+and the meaning of the questions, but you may not look at any part of
+someone else's solution or collaborate with anyone outside your group.
+You may consult published references, provided that you appropriately
+cite them (e.g., with program comments), as you would in an academic
+paper. {\em Even though this project is based on code subject to
+  an open source license, you may not redistribute your work, because
+  that would constitute a violation of the Honor Code.}
+
+
+\medskip
+
+Once you have your partner, then you will use GitHub Classroom, via
+this clone link. One of you goes first, and GitHub will ask for a name
+for your ``team''. Please use your two Rice NetIDs with a hyphen
+between them, e.g., {\tt abc12-def34}, as your team name. {\bf Do
+  not visit the clone link until both you and your partner have agreed
+  to work together.} GitHub makes it difficult to rearrange partnered
+repositories, so we'd like to avoid this unless absolutely necessary.
+
+\medskip
+
+Before you do anything else, be sure to edit the {\tt README.md} file
+to have your names, email addresses, and so forth, then commit the
+file. Just to make sure you're not having any weird GitHub issues,
+do this with separate commits: one from each partner editing their
+name. That way, if there are weird GitHub problems, we'll know about
+them as soon as possible.
+
+
+\medskip
+\begin{center}
+\fbox{\url{https://classroom.github.com/a/XXXXXXXX}}
+\end{center}
+
+\hrulefill
+
+\bigskip
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+\handout
+\setlength{\parindent}{0pt}
+\problemsetheader
+\setlength{\parindent}{20pt}
+
+\vspace*{-15pt}
+\section{Introduction}
+
+This project gives you a sophisticated toolbox of primitives that are
+useful for building ``end to end'' cryptographic voting systems,
+including ElGamal cryptography (additively homomorphic) and
+Chaum-Pedersen proofs. It's based on an open-source project from
+Microsoft called ElectionGuard, which has multiple implementations
+for different purposes. This assignment is based on the Python
+``reference implementation''\footnote{\url{https://github.com/microsoft/electionguard-python}}.
+
+The ``real'' ElectionGuard code has a number of features that are
+useful for ``real'' elections, like understanding different ``ballot
+styles'' (i.e., not every candidate appears on every ballot, but you
+still want to be able to add ballots together). These features add
+a huge amount of complexity that might get in your way of
+understanding and using the code without a lot of study.
+
+Consequently, we've stripped all the fancy stuff out and kept all the
+cryptographic primitives. You'll be implementing ``simple'' elections,
+where every ballot has exactly one contest on it, with the same
+candidates on every ballot, and each voter gets to pick zero or one of them.
+(This is sometimes called a ``first past the post''
+election\footnote{\url{https://en.wikipedia.org/wiki/First-past-the-post_voting}}.)
+
+This project has two parts. You'll first encrypt, decrypt, and
+validate ``selections'', which is to say, the individual choices that
+a voter might make. For the second part, you'll move up one level of
+abstraction and implement encryption, decryption, and validation for
+whole ballots, as well as for the election tabulations.
+
+For both parts, we've written extensive unit tests, leveraging
+Python's Hypothesis
+library\footnote{\url{https://hypothesis.readthedocs.io/en/latest/}},
+which will exercise your code with both positive examples (i.e., where
+validation should succeed) and negative examples (i.e., where
+validation should fail). We're also going to ask you to write some of
+your own unit tests that validate specific properties. Your grade will
+be primarily based on which unit tests you pass and which unit tests
+you fail. Of course, you're welcome to add any additional tests you
+want, if you find that helpful, but {\em if you make any modifications to
+existing tests, we will grade them as if they failed}.
+
+\vspace{-6pt}
+\subsection{Objectives}
+\begin{itemize}\itemsep=0ex
+\item Gain exposure to modern, real-world cryptographic techniques.
+\item Learn to implement cryptographic code and validate its correctness.
+\end{itemize}
+
+\newpage
+
+\section{Setting up your computer}
+This assignment generally requires you to set up your computer as one
+would do for a modern Python3 development environment. There are a
+number of good Python IDEs, like PyCharm, that you're welcome to use,
+although you can run all the tests from the command-line, and that's
+how we'll describe everything here.
+
+For Mac users, you should first install the Apple developer tools.
+The command-line to do this is \fbox{\tt xcode-select --install},
+and you'll need to accept Apple's license.
+
+Once your computer is ready, you should install:
+\begin{itemize}
+\item Python 3.8 (\url{https://www.python.org/downloads/})
+\item (Macs only) Homebrew (\url{https://brew.sh/})
+\item GNU Make (already present on Macs)
+\end{itemize}
+
+Earlier versions of Python won't work. This assignment hasn't been
+tested against Python 3.9, so it might work or it might not.
+
+If you're on Linux, then you probably know about tools like {\tt apt}
+for installing new software. If you're on Windows, there are many
+different ways to go, ranging from the Windows Subsystem for
+Linux\footnote{\url{https://docs.microsoft.com/en-us/windows/wsl/install-win10}},
+to running things natively on Windows itself.
+
+We have less experience doing this with Windows, so if you have
+issues, post about it on Piazza. Similarly, we've only tested this on
+Intel Macs. If you've got one of the new M1 ARM Macs, it's hard to
+know where things might go wrong, but if they do go wrong, it will be
+well before you start coding.
+
+\section{Cloning from GitHub, setting up your venv}
+If you're using a tool like PyCharm, it will do all of this
+automatically. You give it the GitHub URL, and it will clone
+it locally, then automatically set up a Python ``virtual environment''
+where it will install all the library dependencies, of which there
+are many. That will only get you half-way, though, because there
+are additional ``native'' dependencies.
+
+Launch your favorite shell and go to the directory after the {\tt git
+clone} process is complete. Run {\tt make}. This will run the
+appropriate commands for Linux, Mac, or Windows, to download and
+install all of the necessary dependencies. {\bf You need to do this,
+  exactly once, even if you've already used PyCharm or another IDE
+  to clone the repository.}
+
+One way that you'll know you've succeeded is if that {\tt make}
+process gets all the way through to running the unit tests, most
+of which will succeed, with others that will fail because you haven't
+implemented the assignment yet.
+
+Similarly, you can compare what you see on your own computer with
+what happens every time you push some commits to GitHub, where all
+the unit tests will be executed in a virtual Linux environment
+by GitHub Actions. You'll see a red X or green checkmark, telling you
+whether the tests have failed or passed. You can click on that
+and you'll then see a transcript of the unit tests running.
+
+{\bf You want to make sure that you've got the tests running and
+  (mostly) passing as quickly as possible. If necessary, we'll have
+  extended office hours, where you can share your screen, and we can
+  try to figure out why your computers aren't quite running everything
+  as they should.}
+
+\section{Additional background}
+There are several cryptographic things going on in ElectionGuard that
+we didn't have time to cover in class, but that you really need to
+understand.
+
+\subsection{P's and Q's}
+When we introduced the digital signature algorithm, we mentioned that
+it has two separate primes that it uses, $p$ and $q$, but we didn't
+spend much time explaining why, except to say that we want our
+exponents to be smaller, if we can get away with it without giving up
+any cryptographic strength. (The text below was written by 
+Josh Benaloh, a principal senior cryptographer at Microsoft Research,
+who also designed the cryptography for ElectionGuard.)
+
+The reason for two primes is that if you are doing computations in the
+multiplicative subgroup modulo $p$, the elements are ${1,2,\ldots p-1}$. The
+identity $1$ is always special, but since $p-1$ will not be prime (unless
+$p=3$), some of the remaining elements will be able to be {\em distinguished}.
+All elements $x$ will have the property $x^{p-1}\mod p = 1$, but many have
+smaller order as well. For instance, every $x=y^2\mod p$ (quadratic
+residues) has the property that $x^{(p-1)/2}\mod p = 1$, and this
+property persists as these elements are raised to other powers. This
+can compromise information that should be kept secret.
+ 
+
+To avoid having distinguished elements, we like to use a {\em prime order
+subgroup}. In many cases, we choose $p$ such that $(p-1)/2$ is prime and
+just use the prime order subgroup consisting of all quadratic
+residues. However, we can achieve the security of a very large $p$ by
+using a much smaller subgroup defined by a smaller $q$ that divides
+$p-1$. All of the elements of this smaller subgroup are generated by
+$g^0,g^1, g^2,\ldots, g^{q-1}$, so we can get random elements with size $q$
+exponents rather than size $p$ exponents. This makes everything
+substantially more efficient. A $q$ just below $2^{256}$ also allows us to
+match exponents nicely with SHA-256 outputs. So using $q$ as the largest
+256-bit prime works very nicely.
+ 
+
+One might then choose $p$ to be the largest 4096-bit prime such that
+$p-1$ is a multiple of $q$ (which is what I did initially).  However,
+having $p$ be close to a power of 2 (or otherwise representable as a
+value of a polynomial with ``small'' coefficients) weakens its
+resistance to discrete log attacks via the special number-field
+sieve\footnote{\url{https://en.wikipedia.org/wiki/Special_number_field_sieve}}.
+It is desirable to have parameters generated deterministically to
+avoid concerns that there may be some hidden back door.  I tried to
+find a clean way to do this, but every attempt that I made wound up
+being representable as a polynomial with small coefficients.  I
+therefore did what everyone else does and used an unrelated
+mathematical constant to deterministically produce $p$.  Both $\pi$
+and $e$ are overused for this purpose, and the description is slightly cleaner
+if the constant is less than one and greater than one half, so I wound
+up with the Euler-Mascheroni
+constant\footnote{\url{https://en.wikipedia.org/wiki/Euler-Mascheroni_constant}}.
+For computational efficiency,
+there is some benefit to having all of the extreme high-order bits and
+low-order bits be one, so this drove the selection of a suitable $p$.
+
+\paragraph{Extra fun.} When we're running the unit tests, they're
+really slow because $p$ and $q$ are so large. Can you find smaller
+values of $p$ and $q$ that can satisfy the properties above, allowing
+the unit tests to run significantly faster? Would that compromise or
+enhance their ability to find bugs? How might you engineer the
+ElectionGuard library so it's never accidentally in {\em test mode}
+during production use?
+
+\subsection{Chaum-Pedersen}
+\label{sec:chaum-pedersen}
+You'll see several different kinds of Chaum-Pedersen proof objects
+in {\tt chaum\_pedersen.py}:
+\begin{description}
+\item[DisjunctiveChaumPedersenProof] demonstrates that the prover knows
+  the secret nonce used to create an encryption that's either a $1$ or $0$.
+\item[ConstantChaumPedersenProof] demonstrates that the prover
+  knows the secret nonce used to create an encryption that's a
+  constant (not just $0$ or $1$).
+\item[ChaumPedersenProofGeneric]
+  is used by {\tt ChaumPedersenDecryptionProof} to demonstrate
+  that the plaintext decryption of a ciphertext corresponds to the 
+  ciphertext, and does it by knowing the secret key rather than the
+  nonce.
+\end{description}
+
+{\em So, when do you use which sort of proof?}
+
+When you are {\em encrypting a counter that might be one or zero}, you
+make a disjunctive proof. You'll need to hang on to the nonce that you
+used to do the encryption. You'll ultimately output one proof per encrypted
+counter.
+
+When you are {\em proving that the voter cast zero or one votes on the ballot},
+you could theoretically use a disjunctive proof again, but we might
+want to have something more complicated, like allowing the voter to
+vote for $k$-of-$n$ candidates. That would make a disjunctive proof
+much more complicated. Instead, what you'll do is create a
+``placeholder'' candidate (literally, their name will be
+``PLACEHOLDER''). If all the other candidates got zero votes, then the
+placeholder gets one. Otherwise, the placeholder gets zero. The
+placeholder has the same disjunctive proof as all the real candidates.
+And now here's the cool part: you just use the additive homomorphism
+of ElGamal, and generate a {\em constant} Chaum-Pedersen proof, that
+the sum of all the candidates, including the placeholder, is exactly
+one. (If this was a $k$-of-$n$ election, this would generalize to
+having $k$ placeholders, and the proof would be that the sum is
+exactly $k$.)
+
+When you are {\em decrypting the tally and proving that the announced
+  plaintext is correct}, you use the decryption proof, which doesn't
+require the nonce, but does require the decryption (secret) key.
+You'll see each of these Chaum-Pedersen proof types listed as part
+of the various data structures in {\tt simple\_election\_data.py},
+so you'll know which one to use where.
+
+\paragraph{Extra fun.} A good exercise to convince
+yourself that you understand Chaum-Pedersen proofs would be to use the
+``generic'' Chaum-Pedersen object as a component of the
+``disjunctive'' and ``constant'' proofs. Reimplement these other proof
+types using the ``generic'' proof as a component! You'd have one
+``generic'' proof for the ``constant'' proof and you'd have {\em two}
+of them for the disjunctive proof---one real and one fake. You could
+do this and take advantage of the existing unit tests to make sure you
+didn't break anything.
+
+\subsection{Nonces and nondeterminism}
+\label{sec:nonces}
+You'll see {\tt seed}, {\tt base\_seed}, {\tt base\_hash}, and other
+such names for arguments to many of your functions. The important
+concept is that {\bf all your code should be deterministic}. The same
+inputs should always yield the same outputs. These seed values are
+where you get your nondeterminism. When you're encrypting a ballot
+that has five counters, you'll need five individual random numbers.
+You can derive them from the seed using the code in {\tt nonces.py}. 
+
+The broad idea, then, is that every ``real world'' ballot will start
+with a single, true-random number, and from that, all of the other
+random $r$ values for the encryptions, and everywhere else they're
+needed, will be derived from that initial seed.
+
+You want to implement this as a hierarchical process. From the master
+seed, you'll derive seeds for each ballot. Then from the ballot seeds,
+you'll derive seeds for each selection. Each layer of code passes the seed
+values down to the next layer of code. You can convert one seed into
+as many as you need by using the code in {\tt nonces.py}.
+
+\paragraph{Extra fun.} Imagine that we have hand-marked paper ballots
+being fed into a scanner with a reasonably fast computer but not
+enough storage for the ballot ciphertexts (real world ElectionGuard
+ciphertexts can be multiple megabytes of data per ballot). If we
+printed a unique master seed as a barcode on the bottom of each
+ballot, then the scanner could compute the full encryption, if it
+wanted, printing the voter a ``receipt'' which is really just the hash
+of their encrypted ballot. {\em Then the machine can completely forget
+the ciphertext} because it can be recomputed later, identically, due to the
+deterministic architecture of how nonces are derived from seeds.
+
+\subsection{The ElectionGuard library}
+If you look in the {\tt src/electionguard} directory, you'll see a
+number of files. Here's what each of them does:
+
+\begin{description}
+\item[chaum\_pedersen.py] Implementations of several different Chaum-Pedersen proofs
+  (see Section~\ref{sec:chaum-pedersen}).
+\item [dlog.py] Implements a caching, brute-force discrete log engine.
+  So long as the exponent is on the small side (millions, not
+  billions), this will run efficiently. We need this to undo the
+  $g^v$ exponentiation applied to the plaintext vote counter $v$.
+\item [elgamal.py] Implements ``exponential ElGamal'' encryption and
+  decryption.
+\item [group.py] Implements {\tt ElementModQ}, {\tt ElementModP}, and
+  a variety of function wrappers to compute with them. All of this
+  bottoms out to calls to the GNU MultiPrecision library, which has
+  fast, hand-tuned assembly code.
+\item [hash.py] Implements a wrapper around SHA-256 hashing, where
+  you can hash just about anything, including lists, and get out
+  an {\tt ElementModQ}.
+\item [logs.py] Implements a wrapper around Python's logging facility.
+  Logs go to the screen, and you have some flexibility to configure
+  things, where everything goes to a file and only some things go to
+  the screen. You'll see lots of calls to the logging functions
+  throughout the rest of the code.
+\item [nonces.py] Often you'll want to start with some seed value
+  and generate a stream of nonces that you need to be different from
+  one another, but deterministically derived from the seed. This code
+  gives you a Python {\tt Sequence}, which you can treat as if it's
+  an array of infinite length, giving you random access to any element.
+  Optional ``headers'' (typically, just another string) will be hashed
+  together with the given seed value, making it easy for you to create
+  multiple nonce streams, which you might use for different purposes,
+  from the same original seed value (see Section~\ref{sec:nonces}).
+\item [simple\_election\_data.py] This defines all the input and output
+  types for the code you'll be writing. This is the Python equivalent
+  of C struct definitions. (We deliberately avoided using too many
+  fancy Python object-oriented features, to keep our code cleaner,
+  making it hopefully more readable by non-experts in the language.)
+\item [simple\_elections.py] This is where you'll be doing most of
+  your work. We've defined all the functions you need to implement,
+  including their argument and return types, but we've left most of
+  the bodies empty.
+\item [utils.py] A handful of general-purpose utility functions that are
+  used in various places.
+\end{description}
+  
+But that's not all. You'll find corresponding unit test files in the
+{\tt tests} directory. If you read those tests, you'll see that they
+make extensive use of the Hypothesis property-based testing library,
+which allows inputs to be generated at random. In the {\tt
+  src/electionguardtest}
+directory, you'll see the ``generator'' functions (called
+``composites'' in Hypothesis) that can produce these random values.
+Unfortunately, Hypothesis and mypy (Python's static type annotation
+checker) don't get along nicely, so we cannot annotate the generators
+with their return type. If you follow the patterns of other unit
+tests, you should be able to avoid too many weird type errors.
+
+
+\newpage
+\section{Submission Strategy \& Engineering}
+
+All of the code elements that you must implement are conveniently
+labeled {\tt TODO} for you and will mention ``part 1'' or ``part 2''.
+You'll notice some of these {\tt TODO} comments are in the unit tests,
+themselves. Each {\tt TODO} item explains what you're supposed to do,
+so we won't reiterate those here.
+
+You should adopt a ``commit and push, early and often'' strategy.
+While we're not specifically instructing you in how you should
+collaborate with your partner, some variant of pair programming will
+be invaluable, where one of you is typing and sharing their screen,
+while the other is looking over and offering suggestions. Certainly,
+Git makes it straightforward for you to work on separate items and
+merge them later, but you're less likely to understand the full
+project. Trade-off who is typing and who is assisting. Don't just say
+``I know how to do this. You just watch and maybe clean it up later.''
+
+The unit tests will all run on GitHub as part of GitHub Actions. It's
+generally faster and easier to run them on your own computer. You can
+do this inside your favorite IDE, or you can run {\tt make test} from
+your commandline. If you get weird errors, you might run {\tt pipenv
+  shell} beforehand, which ensures that you're using the Python
+virtual environment for the subsequent commands you want to run.
+You should also run {\tt make lint}, which will run {\tt black} (the
+code indenter) and {\tt mypy} (the static type checker). If {\tt
+  black} rejects your code indentation, you can fix that by instead
+running {\tt make auto-lint} or running {\tt black src tests} on the
+command-line.
+
+\paragraph{When you finish part 1.} You're going to want to use a Git
+tag. You do this after you're satisfied that you've completed the
+requirements. You then say {\tt git tag part1} and {\tt git push
+  --tags}. Alternately, you can use the GitHub website to create a
+``release'', which in turn creates a Git tag. Your grader will
+examine your code, at this tag, and the output of GitHub Actions
+when running the unit tests on this tag.
+
+\paragraph{Continuing with part 2.} You can march right ahead with
+part 2, even if that means breaking something from part 1. We
+will grade whatever you have committed and pushed prior to the
+deadline. If you want to keep playing with the code afterwards,
+please make a {\tt part2} tag, as above, and then that will
+be the focus of the graders' attention.
+
+\paragraph{What if it works on my computer and fails on GitHub
+  Actions?} Your grade is based on what the grader sees running on
+GitHub Actions. Perhaps you changed a file on your local machine and
+didn't commit or push the changes to the server. When in doubt,
+find one of the TAs or the professor and ask for help if you're
+seeing these sorts of discrepancies.
+
+\paragraph{Am I allowed to add imports to the files?} Absolutely. If
+there's a function you need that isn't already imported, then feel
+free to import it. That includes functions from the ElectionGuard
+library, or otherwise available from the standard Python libraries.
+You shouldn't need to add or change any external dependencies in
+{\tt Pipfile}.
+
+\paragraph{I'm seeing a ton of warnings on the console...} Many of the
+functions that you're given, when they discover an error, will
+log about it, and then indicate a failure as part of their return
+value. Some unit tests will exercise these errors, causing all
+the logging output as a side-effect, but what really matters to
+you is whether the unit tests pass or fail.
+
+\section{Grading}
+
+This project is worth a total of ten points.
+
+\paragraph{Part 1 (worth 2/10 points).} You must implement several functions and unit
+tests. Your grader will look to make sure all tests from {\tt
+  test\_simple\_elections\_part1.py} pass. You get one point for all
+the existing tests passing, and a second point for the missing test
+that you need to fill in.
+
+\paragraph{Part 2 (worth 8/10 points).} The remaining unit tests, in {\tt
+  test\_simple\_elections\_part2.py}, are collectively worth
+6/10 points. Each failed test will lose you a point, but
+you cannot go below zero. Passing the lint checkers
+(black, mypy, pylint --- all executed by {\tt make lint}) with no
+errors is worth one additional point.
+Lastly, there are a series of questions in the {\tt README.md},
+that you will answer, collectively worth one point. This will require
+writing a small amount of extra code as well.
+
+\end{document}
