@@ -8,9 +8,6 @@
 \newcommand{\duedateA}{Friday, February 19}
 \newcommand{\duedateB}{Friday, February 26}
 
-%%%%%%%%%%%%%%%%
-
-\documentclass[letterpaper,12pt]{article}
 \usepackage{fullpage}
 \usepackage{fancyvrb}
 \usepackage[protrusion=true,expansion=auto]{microtype}
@@ -29,7 +26,14 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{multicol}
+
 \def\textsb#1{{\fontseries{sb}\selectfont #1}}
+\newcommand{\kotlin}[1]{\ifthenelse{\boolean{kotlinShown}}{#1}{}}
+\newcommand{\python}[1]{\ifthenelse{\boolean{pythonShown}}{#1}{}}
+\newcommand{\kotlintt}[1]{\ifthenelse{\boolean{kotlinShown}}{{\tt #1}}{}}
+\newcommand{\pythontt}[1]{\ifthenelse{\boolean{pythonShown}}{{\tt #1}}{}}
+\newcommand{\kotlinftt}[1]{\ifthenelse{\boolean{kotlinShown}}{{\fbox{\tt #1}}}{}}
+\newcommand{\pythonftt}[1]{\ifthenelse{\boolean{pythonShown}}{{\fbox{\tt #1}}}{}}
 
 \newcommand{\problemsetdone}{\hfill$\Box{}$}
 
@@ -144,9 +148,14 @@ understanding and using the code without a lot of study.
 Consequently, we've stripped all the fancy stuff out and kept all the
 cryptographic primitives. You'll be implementing ``simple'' elections,
 where every ballot has exactly one contest on it, with the same
-candidates on every ballot, and each voter gets to pick zero or one of them.
-(This is sometimes called a ``first past the post''
-election\footnote{\url{https://en.wikipedia.org/wiki/First-past-the-post_voting}}.)
+candidates on every ballot, and each voter gets to pick $k$ of the $n$
+total candidates. These are simply added up, and whoever gets the
+most wins.
+(This is a variation on ``approval
+voting''\footnote{\url{https://en.wikipedia.org/wiki/Approval_voting}},
+which is something of a generalization of the usual ``vote for one''
+scheme, sometimes called ``first past the
+post''\footnote{\url{https://en.wikipedia.org/wiki/First-past-the-post_voting}}.)
 
 This project has two parts. You'll first encrypt, decrypt, and
 validate ``selections'', which is to say, the individual choices that
@@ -155,8 +164,10 @@ abstraction and implement encryption, decryption, and validation for
 whole ballots, as well as for the election tabulations.
 
 For both parts, we've written extensive unit tests, leveraging
-Python's Hypothesis
-library\footnote{\url{https://hypothesis.readthedocs.io/en/latest/}},
+\python{the Python Hypothesis property-based testing
+  library\footnote{\url{https://hypothesis.readthedocs.io/en/latest/}}}
+\kotlin{the Java QuickTheories property-based testing
+  library\footnote{\url{https://github.com/quicktheories/QuickTheories}}},
 which will exercise your code with both positive examples (i.e., where
 validation should succeed) and negative examples (i.e., where
 validation should fail). We're also going to ask you to write some of
@@ -176,11 +187,19 @@ existing tests, we will grade them as if they failed}.
 \newpage
 
 \section{Setting up your computer}
+\python{
 This assignment generally requires you to set up your computer as one
 would do for a modern Python3 development environment. There are a
 number of good Python IDEs, like PyCharm, that you're welcome to use,
 although you can run all the tests from the command-line, and that's
-how we'll describe everything here.
+how we'll describe everything here.}
+\kotlin{
+This assignment generally requires you to set up your computer as one
+would do for a modern Kotlin development environment, which pretty
+much means installing IntelliJ IDEA along with any OpenJDK. You'll
+also be able to run all the tests from the command-line, and that's
+how we'll describe everything here.}
+
 
 For Mac users, you should first install the Apple developer tools.
 The command-line to do this is \fbox{\tt xcode-select --install},
@@ -188,58 +207,54 @@ and you'll need to accept Apple's license.
 
 Once your computer is ready, you should install:
 \begin{itemize}
-\item Python 3.8 (\url{https://www.python.org/downloads/})
+\python{\item Python 3.8 (\url{https://www.python.org/downloads/})}
+\kotlin{\item Any OpenJDK 8 or later. Azul notably provides builds
+  that work on ARM computers like M1 Macs. (\url{https://www.azul.com/downloads/?package=jdk})}
 \item (Macs only) Homebrew (\url{https://brew.sh/})
-\item GNU Make (already present on Macs)
+\item (Windows only) Git (\url{https://gitforwindows.org/}) -- this
+  includes the ``Git Bash Shell'', where you can type the commands
+  we'll show you.
+\item (Windows only) A fancier way to install Git is through
+  Chocolatey, which also lets you easily install other commands
+  you might want \python{like {\tt make}, which you'll need
+  for this project} (Simple instructions:
+\url{https://jcutrer.com/windows/install-chocolatey-choco-windows10},
+more complex instructions: \url{https://chocolatey.org/install})
 \end{itemize}
 
-Earlier versions of Python won't work. This assignment hasn't been
-tested against Python 3.9, so it might work or it might not.
-
-If you're on Linux, then you probably know about tools like {\tt apt}
-for installing new software. If you're on Windows, there are many
-different ways to go, ranging from the Windows Subsystem for
-Linux\footnote{\url{https://docs.microsoft.com/en-us/windows/wsl/install-win10}},
-to running things natively on Windows itself.
-
-We have less experience doing this with Windows, so if you have
-issues, post about it on Piazza. Similarly, we've only tested this on
-Intel Macs. If you've got one of the new M1 ARM Macs, it's hard to
-know where things might go wrong, but if they do go wrong, it will be
-well before you start coding.
+\python{Earlier versions of Python won't work. This assignment hasn't been
+tested against Python 3.9, so it might work or it might not.}
 
 \section{Cloning from GitHub, setting up your venv}
-If you're using a tool like PyCharm, it will do all of this
+If you're using a tool like \python{PyCharm}\kotlin{IntelliJ}, it will do all of this
 automatically. You give it the GitHub URL, and it will clone
-it locally, then automatically set up a Python ``virtual environment''
-where it will install all the library dependencies, of which there
-are many. That will only get you half-way, though, because there
-are additional ``native'' dependencies.
+it locally.
+\kotlin{You may need to tell IntelliJ where you installed your JDK,
+  otherwise everything should ``just work''.}
+\python{PyCharm might offer to set up a Python ``virtual environment''
+  for you, but you should let {\tt make} do it for you and then tell
+  PyCharm to use the virtual environment you just made.}
 
-Launch your favorite shell and go to the directory after the {\tt git
+\python{Launch your favorite shell and go to the directory after the {\tt git
 clone} process is complete. Run {\tt make}. This will run the
 appropriate commands for Linux, Mac, or Windows, to download and
 install all of the necessary dependencies. {\bf You need to do this,
   exactly once, even if you've already used PyCharm or another IDE
-  to clone the repository.}
+  to clone the repository.}}
 
-One way that you'll know you've succeeded is if that {\tt make}
-process gets all the way through to running the unit tests, most
-of which will succeed, with others that will fail because you haven't
+\python{One way that you'll know you've succeeded is if that {\tt make}
+  process gets all the way through to running the unit tests.}
+\kotlin{Once installed, you should run the unit tests, either from
+  IntelliJ, or by running {\tt ./gradlew test} on the command-line.}
+Most of the unit tests should succeed, with others that will fail because you haven't
 implemented the assignment yet.
 
 Similarly, you can compare what you see on your own computer with
 what happens every time you push some commits to GitHub, where all
-the unit tests will be executed in a virtual Linux environment
+the unit tests will be executed in a virtual environment
 by GitHub Actions. You'll see a red X or green checkmark, telling you
 whether the tests have failed or passed. You can click on that
 and you'll then see a transcript of the unit tests running.
-
-{\bf You want to make sure that you've got the tests running and
-  (mostly) passing as quickly as possible. If necessary, we'll have
-  extended office hours, where you can share your screen, and we can
-  try to figure out why your computers aren't quite running everything
-  as they should.}
 
 \section{Additional background}
 There are several cryptographic things going on in ElectionGuard that
@@ -299,80 +314,185 @@ For computational efficiency,
 there is some benefit to having all of the extreme high-order bits and
 low-order bits be one, so this drove the selection of a suitable $p$.
 
-\paragraph{Extra fun.} When we're running the unit tests, they're
-really slow because $p$ and $q$ are so large. Can you find smaller
-values of $p$ and $q$ that can satisfy the properties above, allowing
-the unit tests to run significantly faster? Would that compromise or
-enhance their ability to find bugs? How might you engineer the
-ElectionGuard library so it's never accidentally in {\em test mode}
-during production use?
+% \paragraph{Extra fun.} When we're running the unit tests, they're
+% really slow because $p$ and $q$ are so large. Can you find smaller
+% values of $p$ and $q$ that can satisfy the properties above, allowing
+% the unit tests to run significantly faster? Would that compromise or
+% enhance their ability to find bugs? How might you engineer the
+% ElectionGuard library so it's never accidentally in {\em test mode}
+% during production use?
+
+\section{ElGamal encryption}
+Normal ``exponential'' ElGamal encryption, invented in 1985 by Tahir
+ElGamal\footnote{\url{https://ieeexplore.ieee.org/document/1057074}}, is very straightforward. If
+you have a secret key $a$ in $[0,Q)$, the corresponding public key is
+$g^a \mod p$, in $[0,P)$. (We'll stop writing the $P$, $Q$, and $\mod$
+parts because they just overcomplicate the equations.) It's safe to
+share $g^a$ with anybody because it's (hopefully) very hard to recover
+$a$. This is called the ``discrete log problem'' (see also, the
+not entirely identical ``decisional Diffie-Hellman
+problem''\footnote{\url{https://en.wikipedia.org/wiki/Decisional_Diffie\%E2\%80\%93Hellman_assumption}},
+which is the actual hard problem we're counting on for ElGamal
+encryption).
+
+Because we're interested in having an {\em additive homomorphism},
+where we can ``add'' together two encryptions and get another
+encryption, we're going to use a variant called ``exponential
+ElGamal''. With this, we put the message $m$ we're encrypting
+into an exponent. For voting, these messages are mostly going to
+be 0-or-1, representing a voter's selection or absence of a selection,
+so it's important that the cryptosystem have an input that ensures
+a wide distribution of possible ciphertexts. That's a random number
+$r$ called a nonce. We can now define encryption and decryption as
+follows:
+\begin{align*}
+c &= \mathrm{Encrypt}(m, r, g^a) = \left<g^r, g^{ar}g^m\right> \\
+p &= \mathrm{Decrypt}(c, a) \\
+  &= \mathrm{Decrypt}(\left<g^r, g^{ar}g^m\right>, a) & \mathrm{note}: ({g^r})^a = g^{ar} \\
+  &= \mathrm{DLog}_g\left(g^{ar}g^m * \left(g^{ar}\right)^{-1}\right) \\
+  &= \mathrm{DLog}_gg^m \\
+  &= m
+\end{align*}
+Note that $\mathrm{DLog}_gg^m$ is only efficiently computable for
+relatively small $m$, since it requires building a table $\left[1, g, g^2,
+g^3, ...\right]$. Multiplicative inverses, however, are always
+efficient to find, for any value in the group.
+
+\subsection{Homomorphic accumulation}
+With this definition of ElGamal encryption, we can define an
+accumulation operation using piecewise multiplication:
+\begin{align*}
+\mathit{sum} &= \mathrm{Encrypt}(m_1, r_1, g^a) \oplus \mathrm{Encrypt}(m_2, r_2, g^a) \\
+&= \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right> \oplus \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>  \\
+&= \left<g^{r_1 + r_2}, g^{a(r_1 + r_2)}g^{m_1 + m_2}\right>\\
+&= \mathrm{Encrypt}(m_1 + m_2, r_1 + r_2, g^a)
+\end{align*}
+Any intermediary can compute the homomorphic sum of these encryptions
+without needing to decrypt, and without needing to know the secret
+key.
+
+\subsection{Key sharing}
+\label{sec:keyshare}
+
+The real ElectionGuard supports a sophisticated ``threshold
+cryptography'' system
+which allows multiple trustees to each have a ``share'' of the
+election's key material. These shares are combined into a single
+public key, that all the voting machines use. For decryption
+operations, it takes a (predefined) $k$ of the $n$ trustees to
+collaborate together in order to do any decryption operation.
+This ``key ceremony'' is a bit complicated.
+
+As a warmup, you'll be implementing a simplified version, where
+all of the key shareholders need to work together. Here's how it
+works. Let's say we have $n$ trustees, and each has secret keys $a_i$
+and public keys $g^{a_i}$. We can define a joint public key by
+simply multiplying them all together:
+\begin{align*}
+k_{\mathrm{joint}}&= g^{a_0}g^{a_1} \cdots g^{a_n}\\
+&= g^{a_0 + a_1 + \cdots a_n}
+\end{align*}
+                                                                 
+Multiplying together the public keys yields a joint key, where we know
+the {\em formula} for the exponent, even though we can't derive the
+{\em value} for it. So, it a message is encrypted with this joint key,
+we need a way for the trustees to collaboratively decrypt it.
+
+\begin{align*}
+\mathrm{PartialDecrypt}(c, a_i) &= \mathrm{PartialDecrypt}\left(\left<g^r, g^{(a_0 + a_1 \cdots a_n)r}g^m\right>,a_i\right) \\
+\mathrm{DecryptionShare}_i &= ({g^r})^{a_i} = g^{a_ir} \\
+\prod_i \mathrm{DecryptionShare}_i &= g^{a_0r}g^{a_1r}\cdots g^{a_nr} \\
+&= g^{(a_0 + a_1 \cdots a_n)r}
+\end{align*}
+
+Each decryption share is nothing more than the nonce padding $g^r$
+raised to the secret key share $a_i$, and then we can just multiply
+those shares together and we get exactly the value that's multiplied
+with $g^m$. As before, multiplicative inverses are easy to find, so
+we have everything we need to combine ``partial decryptions'' together
+to yield the complete decryption. (This is a warm-up exercise that
+you'll do to get things rolling for part 1 of the assignment.)
+
 
 \subsection{Chaum-Pedersen}
 \label{sec:chaum-pedersen}
 You'll see several different kinds of Chaum-Pedersen proof objects
-in {\tt chaum\_pedersen.py}:
+in \pythontt{chaum\_pedersen.py}\kotlintt{ChaumPedersen.kt}:
 \begin{description}
-\item[DisjunctiveChaumPedersenProof] demonstrates that the prover knows
+\item[DisjunctiveChaumPedersenProofKnownNonce] demonstrates that the prover knows
   the secret nonce used to create an encryption that's either a $1$ or $0$.
-\item[ConstantChaumPedersenProof] demonstrates that the prover
+\item[ConstantChaumPedersenProofKnownNonce] demonstrates that the prover
   knows the secret nonce used to create an encryption that's a
   constant (not just $0$ or $1$).
-\item[ChaumPedersenProofGeneric]
-  is used by {\tt ChaumPedersenDecryptionProof} to demonstrate
-  that the plaintext decryption of a ciphertext corresponds to the 
-  ciphertext, and does it by knowing the secret key rather than the
-  nonce.
+\item[ConstantChaumPedersenProofKnownSecretKey] demonstrates that the prover
+  knows the secret key used to create an encryption that's a
+  constant (not just $0$ or $1$).
+\item[GenericChaumPedersenProof]
+  is used by all of the above proofs. It provides a proof that two
+  tuples $(g, g^x), (h, h^x)$ share the same exponent $x$ without
+  revealing it.
 \end{description}
 
-{\em So, when do you use which sort of proof?}
-
+\noindent {\bf So, when do you use which sort of proof?}
 When you are {\em encrypting a counter that might be one or zero}, you
 make a disjunctive proof. You'll need to hang on to the nonce that you
 used to do the encryption. You'll ultimately output one proof per encrypted
 counter.
 
 When you are {\em proving that the voter cast zero or one votes on the ballot},
-you could theoretically use a disjunctive proof again, but we might
-want to have something more complicated, like allowing the voter to
-vote for $k$-of-$n$ candidates. That would make a disjunctive proof
-much more complicated. Instead, what you'll do is create a
-``placeholder'' candidate (literally, their name will be
-``PLACEHOLDER''). If all the other candidates got zero votes, then the
-placeholder gets one. Otherwise, the placeholder gets zero. The
-placeholder has the same disjunctive proof as all the real candidates.
+you could theoretically use a disjunctive proof again, but we 
+want to support $k$-of-$n$ candidates being selected. That would make a disjunctive proof
+much more complicated. Instead, what you'll do is create zero or more
+``placeholder'' candidates (literally, their name will be
+``PLACEHOLDER'' with an integer after that). If all the other candidates got zero votes, then the
+placeholder(s) gets one. Otherwise, the placeholder(s) gets zero, such
+that the sum of the candidate slots plus the placeholder slots is
+exactly $k$. Each
+placeholder ciphertext has the same disjunctive proof as all the real candidates.
 And now here's the cool part: you just use the additive homomorphism
 of ElGamal, and generate a {\em constant} Chaum-Pedersen proof, that
 the sum of all the candidates, including the placeholder, is exactly
-one. (If this was a $k$-of-$n$ election, this would generalize to
-having $k$ placeholders, and the proof would be that the sum is
-exactly $k$.)
+$k$.
 
 When you are {\em decrypting the tally and proving that the announced
   plaintext is correct}, you use the decryption proof, which doesn't
 require the nonce, but does require the decryption (secret) key.
 You'll see each of these Chaum-Pedersen proof types listed as part
-of the various data structures in {\tt simple\_election\_data.py},
+of the various data structures in
+\pythontt{simple\_election\_data.py}\kotlintt{SimpleElectionData.kt},
 so you'll know which one to use where.
 
-\paragraph{Extra fun.} A good exercise to convince
-yourself that you understand Chaum-Pedersen proofs would be to use the
-``generic'' Chaum-Pedersen object as a component of the
-``disjunctive'' and ``constant'' proofs. Reimplement these other proof
-types using the ``generic'' proof as a component! You'd have one
-``generic'' proof for the ``constant'' proof and you'd have {\em two}
-of them for the disjunctive proof---one real and one fake. You could
-do this and take advantage of the existing unit tests to make sure you
-didn't break anything.
+\noindent {\bf So, how do those proofs work?}
+We cover this in more detail in our lecture. For the purposes of this assignment,
+what matters is that you understand what a ``generic'' Chaum-Pedersen
+proof actually proves, which then enables the more specific versions of the proof
+to use it as a subroutine. So, if we want to prove that the encryption
+of $m=1$ is actually one, based on our knowledge of the encryption
+nonce $r$, then we're going to be generating a proof that $(g, g^r)$
+and $(g^a, g^{ar})$ share the nonce $r$ without revealing $r$. And that
+value $g^{ar}$ is just the right-hand side of the ElGamal
+encryption, after we multiply it with $g^{-1}$ (i.e., canceling
+out the $g^m$ where $m=1$).
+
+This might not seem very exciting, but it's the same math when we're
+proving that the {\em sum of the encrypted counters} is exactly the
+constant $k$ for a $k$-of-$n$ election. When you combine that with
+proofs, for each counter, that they are exactly 0 or 1, you end up
+with a proof, publicly verifiable, that you have a {\em well-formed
+  ballot}. No overvotes. No funny business. This gives public
+observers of an election the ability to verify important properties of
+the election tally without compromising any individual ballot's privacy!
+
 
 \subsection{Nonces and nondeterminism}
 \label{sec:nonces}
-You'll see {\tt seed}, {\tt base\_seed}, {\tt base\_hash}, and other
+You'll see {\tt seed}, \pythontt{hash\_header}\kotlintt{hashHeader}, and other
 such names for arguments to many of your functions. The important
 concept is that {\bf all your code should be deterministic}. The same
 inputs should always yield the same outputs. These seed values are
 where you get your nondeterminism. When you're encrypting a ballot
 that has five counters, you'll need five individual random numbers.
-You can derive them from the seed using the code in {\tt nonces.py}. 
+You can derive them from the seed using the code in \pythontt{nonces.py}\kotlintt{Nonces.kt}. 
 
 The broad idea, then, is that every ``real world'' ballot will start
 with a single, true-random number, and from that, all of the other
@@ -383,7 +503,7 @@ You want to implement this as a hierarchical process. From the master
 seed, you'll derive seeds for each ballot. Then from the ballot seeds,
 you'll derive seeds for each selection. Each layer of code passes the seed
 values down to the next layer of code. You can convert one seed into
-as many as you need by using the code in {\tt nonces.py}.
+as many as you need by using the code in \pythontt{nonces.py}\kotlintt{Nonces.kt}.
 
 \paragraph{Extra fun.} Imagine that we have hand-marked paper ballots
 being fed into a scanner with a reasonably fast computer but not
@@ -397,64 +517,84 @@ the ciphertext} because it can be recomputed later, identically, due to the
 deterministic architecture of how nonces are derived from seeds.
 
 \subsection{The ElectionGuard library}
-If you look in the {\tt src/electionguard} directory, you'll see a
+If you look in the
+\pythontt{src/electionguard}\kotlintt{src/main/kotlin/electionguard}
+directory, you'll see a
 number of files. Here's what each of them does:
 
 \begin{description}
-\item[chaum\_pedersen.py] Implementations of several different Chaum-Pedersen proofs
+\item[\python{chaum\_pedersen.py}\kotlin{ChaumPedersen.kt}]
+  Implementations of several different Chaum-Pedersen proofs
   (see Section~\ref{sec:chaum-pedersen}).
-\item [dlog.py] Implements a caching, brute-force discrete log engine.
+\item [\python{dlog.py}\kotlin{DLog.kt}] Implements a caching, brute-force discrete log engine.
   So long as the exponent is on the small side (millions, not
   billions), this will run efficiently. We need this to undo the
   $g^v$ exponentiation applied to the plaintext vote counter $v$.
-\item [elgamal.py] Implements ``exponential ElGamal'' encryption and
-  decryption.
-\item [group.py] Implements {\tt ElementModQ}, {\tt ElementModP}, and
+\item [\python{elgamal.py}\kotlin{ElGamal.kt}] Implements ``exponential ElGamal'' encryption and
+  decryption. Also, this is where you'll implement ``key sharing''
+  (see Section~\ref{sec:keyshare}).
+\item [\python{group.py}\kotlin{Group.kt}] Implements {\tt ElementModQ}, {\tt ElementModP}, and
   a variety of function wrappers to compute with them. All of this
-  bottoms out to calls to the GNU MultiPrecision library, which has
-  fast, hand-tuned assembly code.
-\item [hash.py] Implements a wrapper around SHA-256 hashing, where
+  bottoms out to calls to the \python{GNU MultiPrecision
+    library}\kotlin{Java BigInteger class}, which has
+  fast, hand-tuned C and assembly code.
+\item [\python{hash.py}\kotlin{Hash.kt}] Implements a wrapper around SHA-256 hashing, where
   you can hash just about anything, including lists, and get out
   an {\tt ElementModQ}.
+\python{
 \item [logs.py] Implements a wrapper around Python's logging facility.
   Logs go to the screen, and you have some flexibility to configure
   things, where everything goes to a file and only some things go to
   the screen. You'll see lots of calls to the logging functions
   throughout the rest of the code.
-\item [nonces.py] Often you'll want to start with some seed value
+}
+\item [\python{nonces.py}\kotlin{Nonces.kt}] Often you'll want to start with some seed value
   and generate a stream of nonces that you need to be different from
   one another, but deterministically derived from the seed. This code
-  gives you a Python {\tt Sequence}, which you can treat as if it's
+  gives you a \python{Python Sequence}\kotlin{Kotlin class instance}, which you can treat as if it's
   an array of infinite length, giving you random access to any element.
   Optional ``headers'' (typically, just another string) will be hashed
   together with the given seed value, making it easy for you to create
   multiple nonce streams, which you might use for different purposes,
   from the same original seed value (see Section~\ref{sec:nonces}).
-\item [simple\_election\_data.py] This defines all the input and output
-  types for the code you'll be writing. This is the Python equivalent
-  of C struct definitions. (We deliberately avoided using too many
-  fancy Python object-oriented features, to keep our code cleaner,
-  making it hopefully more readable by non-experts in the language.)
-\item [simple\_elections.py] This is where you'll be doing most of
+\item
+  [\python{simple\_election\_data.py}\kotlin{SimpleElectionData.kt}] This defines all the input and output
+  types for the code you'll be writing. This is the
+  \python{Python}\kotlin{Kotlin} equivalent
+  of C struct definitions. \python{(We deliberately avoided using too many
+  fancy object-oriented features, to keep our code cleaner,
+  making it hopefully more readable by non-experts in the language.)}
+\kotlin{(We tried to avoid using too many of Kotlin's crazier
+  functional or object-oriented features, to make our code more
+  readable by non-experts, although we do use Kotlin extension
+  functions extensively, so you may want to read up on that.)}
+\item [\python{simple\_elections.py}\kotlin{SimpleElections.kt}] This is where you'll be doing most of
   your work. We've defined all the functions you need to implement,
   including their argument and return types, but we've left most of
   the bodies empty.
-\item [utils.py] A handful of general-purpose utility functions that are
+\item [\python{utils.py}\kotlin{Utilities.kt}] A handful of general-purpose utility functions that are
   used in various places.
 \end{description}
   
 But that's not all. You'll find corresponding unit test files in the
-{\tt tests} directory. If you read those tests, you'll see that they
-make extensive use of the Hypothesis property-based testing library,
-which allows inputs to be generated at random. In the {\tt
-  src/electionguardtest}
-directory, you'll see the ``generator'' functions (called
-``composites'' in Hypothesis) that can produce these random values.
-Unfortunately, Hypothesis and mypy (Python's static type annotation
+\pythontt{tests}\kotlintt{test} directory. If you read those tests, you'll see that they
+make extensive use of the \python{Hypothesis}\kotlin{QuickTheories} property-based testing library,
+which allows inputs to be generated at random.
+In
+\pythontt{src/electionguardtest}\kotlintt{src/test/kotlin/electionguard/Generators.kt},
+you'll see the ``generator'' functions
+\python{(called
+``composites'' in Hypothesis)} that can produce these random values.
+\python{Unfortunately, Hypothesis and mypy (Python's static type annotation
 checker) don't get along nicely, so we cannot annotate the generators
 with their return type. If you follow the patterns of other unit
-tests, you should be able to avoid too many weird type errors.
-
+tests, you should be able to avoid too many weird type errors.}
+\kotlin{Unfortunately, QuickTheories normally only likes to generate
+  at most four arguments at a time, but we often need more than that,
+  so we had to cobble together ``tuples'' of various sizes for
+  QuickTheories to generate more things at once. It make the code
+  a little bit uglier, but it all works.}
+  
 
 \newpage
 \section{Submission Strategy \& Engineering}
@@ -464,6 +604,14 @@ labeled {\tt TODO} for you and will mention ``part 1'' or ``part 2''.
 You'll notice some of these {\tt TODO} comments are in the unit tests,
 themselves. Each {\tt TODO} item explains what you're supposed to do,
 so we won't reiterate those here.
+
+Generally speaking, part 1 is a warm-up, where you're learning your
+way around the codebase, and part 2 is where you're dealing with
+ballots having k-of-n votes cast. Of note, in part 1, you'll start
+off by implementing ElGamal key sharing (see \ref{sec:keyshare}),
+which involves editing code in \python{elgamal.py}\kotlin{ElGamal.kt}.
+Everything else you'll do is in \python{simple\_elections.py}\kotlin{SimpleElections.kt}
+and the associated unit test files.
 
 You should adopt a ``commit and push, early and often'' strategy.
 While we're not specifically instructing you in how you should
@@ -477,15 +625,25 @@ project. Trade-off who is typing and who is assisting. Don't just say
 
 The unit tests will all run on GitHub as part of GitHub Actions. It's
 generally faster and easier to run them on your own computer. You can
-do this inside your favorite IDE, or you can run {\tt make test} from
-your commandline. If you get weird errors, you might run {\tt pipenv
+do this inside your favorite IDE, or you can run \pythonftt{make
+  test}\kotlinftt{./gradlew test} from
+your commandline.
+\python{
+If you get weird errors, you might run {\tt pipenv
   shell} beforehand, which ensures that you're using the Python
 virtual environment for the subsequent commands you want to run.
 You should also run {\tt make lint}, which will run {\tt black} (the
 code indenter) and {\tt mypy} (the static type checker). If {\tt
   black} rejects your code indentation, you can fix that by instead
 running {\tt make auto-lint} or running {\tt black src tests} on the
-command-line.
+command-line.}
+\kotlin{You should also run {\tt ./gradlew formatKotlin} to make
+  sure your code is nicely formatted.}
+
+The autograder is also available to you from the commandline.
+Just run \pythonftt{make autograder}\kotlinftt{./gradlew clean autograder}.
+That should get you results identical to what the graders see
+on GitHub Actions.
 
 \paragraph{When you finish part 1.} You're going to want to use a Git
 tag. You do this after you're satisfied that you've completed the
@@ -512,9 +670,10 @@ seeing these sorts of discrepancies.
 \paragraph{Am I allowed to add imports to the files?} Absolutely. If
 there's a function you need that isn't already imported, then feel
 free to import it. That includes functions from the ElectionGuard
-library, or otherwise available from the standard Python libraries.
+library, or otherwise available from the standard
+\python{Python}\kotlin{Kotlin} libraries.
 You shouldn't need to add or change any external dependencies in
-{\tt Pipfile}.
+\python{Pipfile}\kotlin{build.gradle}.
 
 \paragraph{I'm seeing a ton of warnings on the console...} Many of the
 functions that you're given, when they discover an error, will
@@ -525,22 +684,20 @@ you is whether the unit tests pass or fail.
 
 \section{Grading}
 
-This project is worth a total of ten points.
+This project is worth a total of twenty points.
 
-\paragraph{Part 1 (worth 2/10 points).} You must implement several functions and unit
-tests. Your grader will look to make sure all tests from {\tt
-  test\_simple\_elections\_part1.py} pass. You get one point for all
-the existing tests passing, and a second point for the missing test
-that you need to fill in.
+\paragraph{Part 1 (worth 10 points).} You must implement several functions and unit
+tests. Your grader will look to make sure all tests from
+\pythontt{test\_simple\_elections\_part1.py}
+\kotlintt{SimpleElectionsTestPart1} pass. You get one point for
+your code passing \pythontt{mypy}\kotlin{the Kotlin compiler}
+with no warnings or errors.
 
-\paragraph{Part 2 (worth 8/10 points).} The remaining unit tests, in {\tt
-  test\_simple\_elections\_part2.py}, are collectively worth
-6/10 points. Each failed test will lose you a point, but
-you cannot go below zero. Passing the lint checkers
-(black, mypy, pylint --- all executed by {\tt make lint}) with no
-errors is worth one additional point.
-Lastly, there are a series of questions in the {\tt README.md},
-that you will answer, collectively worth one point. This will require
-writing a small amount of extra code as well.
+\paragraph{Part 2 (worth 10 points).} The remaining unit tests, in
+\pythontt{test\_simple\_elections\_part2.py}
+\kotlintt{SimpleElectionsTestPart2}, are collectively worth
+9/10 points. The remaining point is assessed by your human
+grader, looking at your {\tt README.md} file, where you're
+asked to answer some questions and build a simple benchmark.
 
 \end{document}
