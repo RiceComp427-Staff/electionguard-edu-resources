@@ -3,7 +3,7 @@
 This repository contains instructor resources for working with ElectionGuard-EDU. In particular,
 you'll see:
 
-- Apple Keynote slide deck (and PDF) that corresponds to an 80-ish minute lecture
+- `voting-crypto.key` and `voting-crypto.pdf`: Apple Keynote slide deck (and PDF) that corresponds to an 80-ish minute lecture
   on the "modern cryptography" used by end-to-end cryptographic voting systems.
 
 - `handout-kotlin.tex` and `handout-python.tex`: front-ends that build the student PDF handout,
@@ -18,6 +18,8 @@ Otherwise, it's this README file and then the two other repositories.
 This assignment was designed at Rice for use in our undergraduate senior-level computer security class (Comp427), which is also taken roughly 50/50 by masters students. The first three weeks of the class are a module concerning cryptography, and then we move into other modules considering web security, operating systems, and other topics. Many of the lectures began with material developed by J. Alex Halderman for Michigan's EECS388.
 
 The original Michigan cryptography assignment had the students implement the Bleichenbacher signature forgery attack ([which is still a real-world vulnerability](https://medium.com/asecuritysite-when-bob-met-alice/this-attack-has-been-around-for-20-years-and-its-back-again-with-the-bleichenbacher-oracle-a585c34c9890)). This alternative aims to have the students work with concepts like zero-knowledge proofs and homomorphic encryption, while still being tractable in a course that's not dedicated to cryptography.
+
+In particular, the unit tests use sophisticated property-based testing libraries that are surprisingly good at finding bugs. We have unit tests that specifically look for common patterns we expect students to get confused, which will hopefully help them to fix those bugs. Also, unlike "real" cryptographic libraries, this code has a feature where every "element" carries along with it the formula used to create it. These are presented in a LISP-like prefix notation, but with (perhaps unfortunate) JSON array syntax. It's much more useful to scratch your head staring at a symbolic formula than at thousands of decimal digits.
 
 ## Code
 
