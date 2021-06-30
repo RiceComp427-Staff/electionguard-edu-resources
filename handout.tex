@@ -136,7 +136,8 @@ including ElGamal cryptography (additively homomorphic) and
 Chaum-Pedersen proofs. It's based on an open-source project from
 Microsoft called ElectionGuard, which has multiple implementations
 for different purposes. This assignment is based on the Python
-``reference implementation''\footnote{\url{https://github.com/microsoft/electionguard-python}}.
+``reference implementation''\footnote{\url{https://github.com/microsoft/electionguard-python}}
+\kotlin{but is implemented in Kotlin}\python{but has substantial changes}.
 
 The ``real'' ElectionGuard code has a number of features that are
 useful for ``real'' elections, like understanding different ``ballot
@@ -201,16 +202,14 @@ also be able to run all the tests from the command-line, and that's
 how we'll describe everything here.}
 
 
-For Mac users, you should first install the Apple developer tools.
-The command-line to do this is \fbox{\tt xcode-select --install},
-and you'll need to accept Apple's license.
-
 Once your computer is ready, you should install:
 \begin{itemize}
 \python{\item Python 3.8 (\url{https://www.python.org/downloads/})}
 \kotlin{\item Any OpenJDK 8 or later. Azul notably provides builds
   that work on ARM computers like M1 Macs. (\url{https://www.azul.com/downloads/?package=jdk})}
-\item (Macs only) Homebrew (\url{https://brew.sh/})
+\python{\item (Macs only) Homebrew (\url{https://brew.sh/})}
+\item (Mac only) Install the Apple developer tools. Run
+  \fbox{\tt xcode-select --install} and click to accept the license.
 \item (Windows only) Git (\url{https://gitforwindows.org/}) -- this
   includes the ``Git Bash Shell'', where you can type the commands
   we'll show you.
@@ -219,13 +218,14 @@ Once your computer is ready, you should install:
   you might want \python{like {\tt make}, which you'll need
   for this project} (Simple instructions:
 \url{https://jcutrer.com/windows/install-chocolatey-choco-windows10},
-more complex instructions: \url{https://chocolatey.org/install})
+more complex instructions: \url{https://chocolatey.org/install}).
 \end{itemize}
 
+\noindent
 \python{Earlier versions of Python won't work. This assignment hasn't been
 tested against Python 3.9, so it might work or it might not.}
 
-\section{Cloning from GitHub, setting up your venv}
+\section{Cloning from GitHub, setting up your environment}
 If you're using a tool like \python{PyCharm}\kotlin{IntelliJ}, it will do all of this
 automatically. You give it the GitHub URL, and it will clone
 it locally.
@@ -256,12 +256,11 @@ by GitHub Actions. You'll see a red X or green checkmark, telling you
 whether the tests have failed or passed. You can click on that
 and you'll then see a transcript of the unit tests running.
 
-\section{Additional background}
+\section{Cryptographic basics}
 There are several cryptographic things going on in ElectionGuard that
 we didn't have time to cover in class, but that you really need to
 understand.
 
-\subsection{P's and Q's}
 When we introduced the digital signature algorithm, we mentioned that
 it has two separate primes that it uses, $p$ and $q$, but we didn't
 spend much time explaining why, except to say that we want our
