@@ -173,7 +173,8 @@ For both parts, we've written extensive unit tests, leveraging
   library\footnote{\url{https://github.com/quicktheories/QuickTheories}}},
 which will exercise your code with both positive examples (i.e., where
 validation should succeed) and negative examples (i.e., where
-validation should fail). We're also going to ask you to write some of
+validation should fail). (See Section~\ref{sec:properties} for more
+details on property-based testing.) We're also going to ask you to write some of
 your own unit tests that validate specific properties. Your grade will
 be primarily based on which unit tests you pass and which unit tests
 you fail. Of course, you're welcome to add any additional tests you
@@ -603,12 +604,20 @@ tests, you should be able to avoid too many weird type errors.}
   a little bit uglier, but it all works.}
 
 \subsection{Property-based testing}
+\label{sec:properties}
 If you've never worked with property-based testing before, you can
 think of it as a form of fuzz testing, where the computer generates
 randomly chosen inputs, as part of the unit testing process, and then
 assertions are made about the code. A simple example property might be
 asserting that decryption is the inverse of encryption, i.e.,
-$\forall x: \mathrm{Decrypt}(\mathrm{Encrypt}(x)) = x$. 
+$\forall x: \mathrm{Decrypt}(\mathrm{Encrypt}(x)) = x$. A
+property-based testing library will automate the process of generating
+inputs and running the tests. If it finds a {\em counterexample}, an
+optional but helpful feature is called {\em shrinking}, where it will
+try to search for a ``simpler'' counterexample to present to you,
+which will help you better understand your bug. \python{We've disabled
+  shrinking, by default for most Hypothesis tests, because it's very
+  slow.}
 
 Scott Wlaschin has produced an excellent introduction to property-based
 testing\footnote{\url{https://fsharpforfunandprofit.com/pbt/}} -- a
