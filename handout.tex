@@ -246,7 +246,7 @@ install all of the necessary dependencies. {\bf You need to do this,
 \python{One way that you'll know you've succeeded is if that {\tt make}
   process gets all the way through to running the unit tests.}
 \kotlin{Once installed, you should run the unit tests, either from
-  IntelliJ, or by running {\tt ./gradlew test} on the command-line.}
+  IntelliJ, or by running \fbox{\tt ./gradlew test} on the command-line.}
 Most of the unit tests should succeed, with others that will fail because you haven't
 implemented the assignment yet.
 
@@ -434,7 +434,7 @@ in \pythontt{chaum\_pedersen.py}\kotlintt{ChaumPedersen.kt}:
   revealing it.
 \end{description}
 
-\noindent {\bf So, when do you use which sort of proof?}
+\paragraph{So, when do you use which sort of proof?}
 When you are {\em encrypting a counter that might be one or zero}, you
 make a disjunctive proof. You'll need to hang on to the nonce that you
 used to do the encryption. You'll ultimately output one proof per encrypted
@@ -465,7 +465,7 @@ types listed as part of the various data structures in
 \pythontt{simple\_election\_data.py}\kotlintt{SimpleElectionData.kt},
 so you'll know which one to use where.
 
-\noindent {\bf So, how do those proofs work?}
+\paragraph{So, how do those proofs work?}
 We cover this in more detail in our lecture. For the purposes of this assignment,
 what matters is that you understand what a ``generic'' Chaum-Pedersen
 proof actually proves, which then enables the more specific versions of the proof
@@ -649,12 +649,12 @@ your commandline.
 If you get weird errors, you might run {\tt pipenv
   shell} beforehand, which ensures that you're using the Python
 virtual environment for the subsequent commands you want to run.
-You should also run {\tt make lint}, which will run {\tt black} (the
+You should also run \fbox{\tt make lint}, which will run {\tt black} (the
 code indenter) and {\tt mypy} (the static type checker). If {\tt
   black} rejects your code indentation, you can fix that by instead
-running {\tt make auto-lint} or running {\tt black src tests} on the
+running \fbox{\tt make auto-lint} or running \fbox{\tt black src tests} on the
 command-line.}
-\kotlin{You should also run {\tt ./gradlew formatKotlin} to make
+\kotlin{You should also run \fbox{\tt ./gradlew formatKotlin} to make
   sure your code is nicely formatted.}
 
 The autograder is also available to you from the commandline.
@@ -692,6 +692,13 @@ library, or otherwise available from the standard
 You shouldn't need to add or change any external dependencies in
 \python{Pipfile}\kotlin{build.gradle}.
 
+\paragraph{Am I allowed to add helper functions and/or additional unit
+  tests?} Sure. Just don't change the type signatures or any of the
+other existing code that we've provided for you. In particular,
+if you make changes to any of the unit tests used by the autograder,
+your human grader will treat that test as having failed and will
+subtract the appropriate points.
+
 \paragraph{I'm seeing a ton of warnings on the console...} Many of the
 functions that you're given, when they discover an error, will
 log about it, and then indicate a failure as part of their return
@@ -715,6 +722,6 @@ with no warnings or errors.
 \kotlintt{SimpleElectionsTestPart2}, are collectively worth
 9/10 points. The remaining point is assessed by your human
 grader, looking at your {\tt README.md} file, where you're
-asked to answer some questions and build a simple benchmark.
+asked to answer some questions, based on building a simple benchmark.
 
 \end{document}
