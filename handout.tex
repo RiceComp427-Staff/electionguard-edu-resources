@@ -127,6 +127,8 @@ them as soon as possible.
 \problemsetheader
 \setlength{\parindent}{20pt}
 
+\tableofcontents
+
 \vspace*{-15pt}
 \section{Introduction}
 
@@ -185,7 +187,6 @@ existing tests, we will grade them as if they failed}.
 \item Learn to implement cryptographic code and validate its correctness.
 \end{itemize}
 
-\newpage
 
 \section{Setting up your computer}
 \python{
@@ -321,7 +322,7 @@ low-order bits be one, so this drove the selection of a suitable $p$.
 % ElectionGuard library so it's never accidentally in {\em test mode}
 % during production use?
 
-\section{ElGamal encryption}
+\section{ElGamal encryption and related proofs}
 Normal ElGamal encryption, invented in 1985 by Tahir
 ElGamal\footnote{\url{https://ieeexplore.ieee.org/document/1057074}}, is very straightforward. If
 you have a secret key $a$ in $[0,Q)$, the corresponding public key is
@@ -361,12 +362,13 @@ efficient to find, for any value in the group.
 With this definition of ElGamal encryption, we can define an
 accumulation operation using piecewise multiplication:
 \begin{align*}
-\mathit{sum} &= \mathrm{Encrypt}(m_1, r_1, g^a) \oplus \mathrm{Encrypt}(m_2, r_2, g^a) \\
-&= \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right> \oplus \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>  \\
+c_1 &= \mathrm{Encrypt}(m_1, r_1, g^a) = \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right>\\
+c_2 &= \mathrm{Encrypt}(m_2, r_2, g^a) = \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>\\
+c_1 \oplus c_2 &= \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right> \oplus \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>  \\
 &= \left<g^{r_1 + r_2}, g^{a(r_1 + r_2)}g^{m_1 + m_2}\right>\\
 &= \mathrm{Encrypt}(m_1 + m_2, r_1 + r_2, g^a)
 \end{align*}
-Any intermediary can compute the homomorphic sum of these encryptions
+Any intermediary can compute the homomorphic sum $(\oplus)$ of these encryptions
 without needing to decrypt, and without needing to know the secret
 key.
 
@@ -413,7 +415,7 @@ to yield the complete decryption. (This is a warm-up exercise that
 you'll do to get things rolling for part 1 of the assignment.)
 
 
-\subsection{Chaum-Pedersen}
+\subsection{Chaum-Pedersen proofs}
 \label{sec:chaum-pedersen}
 You'll see several different kinds of Chaum-Pedersen proof objects
 in \pythontt{chaum\_pedersen.py}\kotlintt{ChaumPedersen.kt}:
@@ -517,7 +519,7 @@ of their encrypted ballot. {\em Then the machine can completely forget
 the ciphertext} because it can be recomputed later, identically, due to the
 deterministic architecture of how nonces are derived from seeds.
 
-\subsection{The ElectionGuard library}
+\section{The ElectionGuard library}
 If you look in the
 \pythontt{src/electionguard}\kotlintt{src/main/kotlin/electionguard}
 directory, you'll see a
@@ -562,13 +564,14 @@ number of files. Here's what each of them does:
   [\python{simple\_election\_data.py}\kotlin{SimpleElectionData.kt}] This defines all the input and output
   types for the code you'll be writing. This is the
   \python{Python}\kotlin{Kotlin} equivalent
-  of C struct definitions. \python{(We deliberately avoided using too many
+  of C {\tt struct} definitions. \python{(We deliberately avoided using too many
   fancy object-oriented features, to keep our code cleaner,
   making it hopefully more readable by non-experts in the language.)}
 \kotlin{(We tried to avoid using too many of Kotlin's crazier
   functional or object-oriented features, to make our code more
   readable by non-experts, although we do use Kotlin extension
-  functions extensively, so you may want to read up on that.)}
+  functions\footnote{\url{https://kotlinlang.org/docs/extensions.html}}
+  extensively.)}
 \item [\python{simple\_elections.py}\kotlin{SimpleElections.kt}] This is where you'll be doing most of
   your work. We've defined all the functions you need to implement,
   including their argument and return types, but we've left most of
@@ -577,7 +580,8 @@ number of files. Here's what each of them does:
   used in various places.
 \end{description}
   
-But that's not all. You'll find corresponding unit test files in the
+\subsection{Testing}
+You'll find corresponding unit test files in the
 \pythontt{tests}\kotlintt{test} directory. If you read those tests, you'll see that they
 make extensive use of the \python{Hypothesis}\kotlin{QuickTheories} property-based testing library,
 which allows inputs to be generated at random.
@@ -595,9 +599,21 @@ tests, you should be able to avoid too many weird type errors.}
   so we had to cobble together ``tuples'' of various sizes for
   QuickTheories to generate more things at once. It make the code
   a little bit uglier, but it all works.}
-  
 
-\newpage
+\subsection{Property-based testing}
+If you've never worked with property-based testing before, you can
+think of it as a form of fuzz testing, where the computer generates
+randomly chosen inputs, as part of the unit testing process, and then
+assertions are made about the code. A simple example property might be
+asserting that decryption is the inverse of encryption, i.e.,
+$\forall x: \mathrm{Decrypt}(\mathrm{Encrypt}(x)) = x$. 
+
+Scott Wlaschin has produced an excellent introduction to property-based
+testing\footnote{\url{https://fsharpforfunandprofit.com/pbt/}} -- a
+50-minute YouTube video plus a variety of written blog posts. His
+example code is all in F\#, but his explanations apply
+perfectly to our use of \kotlin{QuickTheories in Kotlin}\python{Hypothesis in Python}.
+
 \section{Submission Strategy \& Engineering}
 
 All of the code elements that you must implement are conveniently

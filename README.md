@@ -4,7 +4,9 @@ This repository contains instructor resources for working with ElectionGuard-EDU
 you'll see:
 
 - `voting-crypto.key` and `voting-crypto.pdf`: Apple Keynote slide deck (and PDF) that corresponds to an 80-ish minute lecture
-  on the "modern cryptography" used by end-to-end cryptographic voting systems.
+on the "modern cryptography" used by end-to-end cryptographic voting systems. If you want to use these slides with Keynote,
+you'll need to install the [Roboto font family](https://fonts.google.com/specimen/Roboto) (used everywhere) and [Hack](https://sourcefoundry.org/hack/) (used for code). All freely available.
+
 
 - `handout-kotlin.tex` and `handout-python.tex`: front-ends that build the student PDF handout,
 suitably customized to match the Kotlin or Python3 codebases in which they'll be working.
@@ -24,7 +26,7 @@ In particular, the unit tests use sophisticated property-based testing libraries
 ## Code
 
 There are two code repositories: `electionguard-edu-kotlin` and `electionguard-edu-python`. They have roughly the same code, to the
-extent that two wildly different programming langauges allow you to write the same thing. As such, your choice of which codebase to
+extent that two wildly different programming languages allow you to write the same thing. As such, your choice of which codebase to
 use for this assignment is mostly a function of your students' preparation. If your students know Python well, you might just stick with that. If they know Java well, then Kotlin is relatively easy to learn for a Java programmer. (The Kotlin repository includes an
 introductory document to help them.)
 
@@ -34,7 +36,7 @@ There are two branches in each repository. `main` provides a complete solution, 
 
 When you're preparing your handouts, likely using [GitHub Classroom](https://classroom.github.com/), you would clone the repository, check out the `handout` branch, make any necessary changes to the `README.md` file, and then the scary part. Remove the entire `.git` directory and start over (`git init . ; git add . ; git commit -m 'initial commit'`). Now you've got a repository with only the student view of the code, ready for uploading to GitHub.
 
-Once you've got your Classroom "clone link", you paste it into `handout.tex`, and run `pdflatex handout-python` or `pdflatex handout-kotlin`, as appropriate, to generate the student handout. We're including sample PDFs with non-functional clone links so it's easier for you to read them.
+Once you've got your Classroom "clone link", you paste it into `handout.tex`, and run `make handout-python.pdf` or `make handout-kotlin.pdf`, as appropriate, to generate the student handout. We're including sample PDFs with non-functional clone links so it's easier for you to read them.
 
 ## Autograding
 
