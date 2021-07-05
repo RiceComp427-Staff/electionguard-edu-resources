@@ -133,7 +133,7 @@ them as soon as possible.
 \section{Introduction}
 
 This project gives you a sophisticated toolbox of primitives that are
-useful for building ``end to end'' cryptographic voting systems,
+useful for building ``end to end verifiable'' cryptographic voting systems,
 including ElGamal cryptography (additively homomorphic) and
 Chaum-Pedersen proofs. It's based on an open-source project from
 Microsoft called ElectionGuard, which has multiple implementations
@@ -154,9 +154,7 @@ where every ballot has exactly one contest on it, with the same
 candidates on every ballot, and each voter gets to pick $k$ of the $n$
 total candidates. These are simply added up, and whoever gets the
 most wins.
-(This is a variation on ``approval
-voting''\footnote{\url{https://en.wikipedia.org/wiki/Approval_voting}},
-which is something of a generalization of the usual ``vote for one''
+(This is a modest generalization of the usual ``vote for one''
 scheme, sometimes called ``first past the
 post''\footnote{\url{https://en.wikipedia.org/wiki/First-past-the-post_voting}}.)
 
@@ -334,10 +332,10 @@ low-order bits be one, so this drove the selection of a suitable $p$.
 \section{ElGamal encryption and related proofs}
 Normal ElGamal encryption, invented in 1985 by Tahir
 ElGamal\footnote{\url{https://ieeexplore.ieee.org/document/1057074}}, is very straightforward. If
-you have a secret key $a$ in $[0,Q)$, the corresponding public key is
-$g^a \mod p$, in $[0,P)$. (We'll stop writing the $P$, $Q$, and mod
+you have a secret key $a$ in $[0,q)$, the corresponding public key is
+$g^a \mod p$, in $[0,p)$. (We'll stop writing the $p$, $q$, and mod
 parts because they just overcomplicate the equations.) It's safe to
-share $g^a$ with anybody because it's (hopefully) very hard to recover
+share $g^a$ with anybody because it's (believed to be) very hard to recover
 $a$. This is called the ``discrete log problem'' (see also, the
 not entirely identical ``decisional Diffie-Hellman
 problem''\footnote{\url{https://en.wikipedia.org/wiki/Decisional_Diffie\%E2\%80\%93Hellman_assumption}},
@@ -357,15 +355,24 @@ follows:
 \begin{align*}
 c &= \mathrm{Encrypt}(m, r, g^a) = \left<g^r, g^{ar}g^m\right> \\
 p &= \mathrm{Decrypt}(c, a) \\
-  &= \mathrm{Decrypt}(\left<g^r, g^{ar}g^m\right>, a) & \mathrm{note}: ({g^r})^a = g^{ar} \\
+  &= \mathrm{Decrypt}(\left<g^r, g^{ar}g^m\right>, a) & \mathrm{note:} \left({g^r}\right)^a = \left({g^a}\right)^r = g^{ar} \\
   &= \mathrm{DLog}_g\left(g^{ar}g^m * \left(g^{ar}\right)^{-1}\right) \\
   &= \mathrm{DLog}_gg^m \\
   &= m
 \end{align*}
 Note that $\mathrm{DLog}_gg^m$ is only efficiently computable for
-relatively small $m$, since it requires building a table $\left[1, g, g^2,
-g^3, ...\right]$. Multiplicative inverses, however, are always
-efficient to find, for any value in the group.
+relatively small $m$, since our implementation uses {\em memoization}
+to build a table $\left[1, g, g^2,
+g^3, ...\right]$.\footnote{We could trade space for time, using an
+algorithm called ``baby-step, giant-step'' by Daniel Shanks.
+\url{https://en.wikipedia.org/wiki/Baby-step_giant-step}; see also
+rainbow tables. \url{https://en.wikipedia.org/wiki/Rainbow_table}} Multiplicative inverses, however, are always
+efficient to find, for any value in the group. In particular, we know
+that $\forall x: x^q \mod p = 1$, by virtue of how we've set up $p$
+and $q$, so therefore an easy way to find $x^{-1}$ is just $x^{q-1}$
+because $x * x^{q-1} = x^q = 1$. Alternatively, a efficient way to
+compute inverses would be to use the extended Euclidean algorithm\footnote{\url{https://en.wikipedia.org/wiki/Extended\_Euclidean\_algorithm\#Computing\_multiplicative\_inverses\_in\_modular\_structures}}.
+
 
 \subsection{Homomorphic accumulation}
 With this definition of ElGamal encryption, we can define an
@@ -374,6 +381,7 @@ accumulation operation using piecewise multiplication:
 c_1 &= \mathrm{Encrypt}(m_1, r_1, g^a) = \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right>\\
 c_2 &= \mathrm{Encrypt}(m_2, r_2, g^a) = \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>\\
 c_1 \oplus c_2 &= \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right> \oplus \left<g^{r_2}, g^{a{r_2}}g^{m_2}\right>  \\
+&= \left<\left(g^{r_1}\right)\left(g^{r_2}\right), \left(g^{a{r_1}}g^{m_1}\right)\left(g^{a{r_2}}g^{m_2}\right)\right> \\
 &= \left<g^{r_1 + r_2}, g^{a(r_1 + r_2)}g^{m_1 + m_2}\right>\\
 &= \mathrm{Encrypt}(m_1 + m_2, r_1 + r_2, g^a)
 \end{align*}
@@ -399,8 +407,8 @@ works. Let's say we have $n$ trustees, and each has secret keys $a_i$
 and public keys $g^{a_i}$. We can define a joint public key by
 simply multiplying them all together:
 \begin{align*}
-k_{\mathrm{joint}}&= g^{a_0}g^{a_1} \cdots g^{a_n}\\
-&= g^{a_0 + a_1 + \cdots a_n}
+k_{\mathrm{joint}}&= g^{a_1}g^{a_2} \cdots g^{a_n}\\
+&= g^{a_1 + a_2 + \cdots a_n}
 \end{align*}
                                                                  
 Multiplying together the public keys yields a joint key, where we know
@@ -409,10 +417,10 @@ the {\em formula} for the exponent, even though we can't derive the
 we need a way for the trustees to collaboratively decrypt it.
 
 \begin{align*}
-\mathrm{PartialDecrypt}(c, a_i) &= \mathrm{PartialDecrypt}\left(\left<g^r, g^{(a_0 + a_1 \cdots a_n)r}g^m\right>,a_i\right) \\
+\mathrm{PartialDecrypt}(c, a_i) &= \mathrm{PartialDecrypt}\left(\left<g^r, g^{(a_1 + a_2 \cdots a_n)r}g^m\right>,a_i\right) \\
 \mathrm{DecryptionShare}_i &= ({g^r})^{a_i} = g^{a_ir} \\
-\prod_i \mathrm{DecryptionShare}_i &= g^{a_0r}g^{a_1r}\cdots g^{a_nr} \\
-&= g^{(a_0 + a_1 \cdots a_n)r}
+\prod_i \mathrm{DecryptionShare}_i &= g^{a_1r}g^{a_2r}\cdots g^{a_nr} \\
+&= g^{(a_1 + a_2 \cdots a_n)r}
 \end{align*}
 
 Each decryption share is nothing more than the nonce padding $g^r$
@@ -421,7 +429,7 @@ those shares together and we get exactly the value that's multiplied
 with $g^m$. As before, multiplicative inverses are easy to find, so
 we have everything we need to combine ``partial decryptions'' together
 to yield the complete decryption. (This is a warm-up exercise that
-you'll do to get things rolling for part 1 of the assignment.)
+you'll do to get things rolling for part~1 of the assignment.)
 
 
 \subsection{Chaum-Pedersen proofs}
@@ -474,6 +482,16 @@ types listed as part of the various data structures in
 \pythontt{simple\_election\_data.py}\kotlintt{SimpleElectionData.kt},
 so you'll know which one to use where.
 
+Fun fact: in the special case where $k=n$, we wouldn't need this
+placeholder construction, because we wouldn't need to restrict the total
+number of cast votes. This voting method is called ``approval
+voting''\footnote{\url{https://en.wikipedia.org/wiki/Approval_voting}};
+not only does it simplify our proofs, but it also improves usability for voters by
+eliminating the possibility of a ballot being discarded by virtue of
+being ``overvoted''. Of course, if a voter selected {\em all} $n$
+candidates, their vote would be valid, but it wouldn't have any meaningful
+influence on the winner.
+
 \paragraph{So, how do those proofs work?}
 We cover this in more detail in our lecture. For the purposes of this assignment,
 what matters is that you understand what a ``generic'' Chaum-Pedersen
@@ -495,6 +513,15 @@ with a proof, publicly verifiable, that you have a {\em well-formed
 observers of an election the ability to verify important properties of
 the election tally without compromising any individual ballot's privacy!
 
+\paragraph{What if the voter selects more than $k$ candidates?}
+The voter has expressed a ballot that is not valid. There's no way for
+you to produce an encrypted ballots, with all of the valid proofs.
+Since exactly this can and will happen in the real world, you'll need
+to deal with this, in part~2 of the assignment. You'll need to
+``interpret'' these overvoted ballots into undervotes (i.e., no
+selections at all) before encrypting them. Note that this means that
+the decryption of the encryption of an overvoted ballot is going to be
+different from the original selections!
 
 \subsection{Nonces and nondeterminism}
 \label{sec:nonces}
@@ -634,14 +661,14 @@ perfectly to our use of \kotlin{QuickTheories in Kotlin}\python{Hypothesis in Py
 \section{Submission Strategy \& Engineering}
 
 All of the code elements that you must implement are conveniently
-labeled {\tt TODO} for you and will mention ``part 1'' or ``part 2''.
+labeled {\tt TODO} for you and will mention ``part~1'' or ``part~2''.
 You'll notice some of these {\tt TODO} comments are in the unit tests,
 themselves. Each {\tt TODO} item explains what you're supposed to do,
 so we won't reiterate those here.
 
-Generally speaking, part 1 is a warm-up, where you're learning your
-way around the codebase, and part 2 is where you're dealing with
-ballots having k-of-n votes cast. Of note, in part 1, you'll start
+Generally speaking, part~1 is a warm-up, where you're learning your
+way around the codebase, and part~2 is where you're dealing with
+ballots having k-of-n votes cast. Of note, in part~1, you'll start
 off by implementing ElGamal key sharing (see \ref{sec:keyshare}),
 which involves editing code in \python{elgamal.py}\kotlin{ElGamal.kt}.
 Everything else you'll do is in \python{simple\_elections.py}\kotlin{SimpleElections.kt}
@@ -682,15 +709,17 @@ on GitHub Actions.
 \paragraph{When you finish part 1.} You're going to want to use a Git
 tag. You do this after you're satisfied that you've completed the
 requirements. You then say {\tt git tag part1} and {\tt git push
-  --tags}. Alternately, you can use the GitHub website to create a
+  -{}-tags}. Alternately, you can use the GitHub website to create a
 ``release'', which in turn creates a Git tag. Your grader will
 examine your code, at this tag, and the output of GitHub Actions
-when running the unit tests on this tag.
+when running the unit tests on this tag. Or, if you haven't done
+this, your grader will just look at whatever you've pushed prior
+to the deadline.
 
 \paragraph{Continuing with part 2.} You can march right ahead with
-part 2, even if that means breaking something from part 1. We
-will grade whatever you have committed and pushed prior to the
-deadline. If you want to keep playing with the code afterwards,
+part~2, even if that means breaking something from part~1. Your
+grader will examine whatever you have committed and pushed prior to the
+final deadline. If you want to keep playing with the code afterwards,
 please make a {\tt part2} tag, as above, and then that will
 be the focus of the graders' attention.
 
@@ -740,5 +769,9 @@ with no warnings or errors.
 9/10 points. The remaining point is assessed by your human
 grader, looking at your {\tt README.md} file, where you're
 asked to answer some questions, based on building a simple benchmark.
+
+We're only including \pythontt{mypy}\kotlin{the Kotlin compiler} once
+in the grading rubric, but if your part~1 submission is fine and your
+final submission has warnings or errors, we'll still take off the point.
 
 \end{document}
