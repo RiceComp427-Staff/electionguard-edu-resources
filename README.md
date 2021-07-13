@@ -7,6 +7,8 @@ you'll see:
 on the "modern cryptography" used by end-to-end cryptographic voting systems. If you want to use these slides with Keynote,
 you'll need to install the [Roboto font family](https://fonts.google.com/specimen/Roboto) (used everywhere) and [Hack](https://sourcefoundry.org/hack/) (used for code). All freely available.
 
+- `voting-crypto.pptx` is exported from `voting-crypto.key`, and is probably good enough for making small changes, but
+  there are no guarantees it will work flawlessly.
 
 - `handout-kotlin.tex` and `handout-python.tex`: front-ends that build the student PDF handout,
 suitably customized to match the Kotlin or Python3 codebases in which they'll be working.
