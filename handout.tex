@@ -234,13 +234,14 @@ more complex instructions: \url{https://chocolatey.org/install})
 tested against Python 3.9, so it might work or it might not.}
 
 \section{Cloning from GitHub, setting up your environment}
-If you're using a tool like \python{PyCharm}\kotlin{IntelliJ}, it will do all of this
+If you're using a tool like \python{PyCharm}\kotlin{IntelliJ}, it will
+{\em try} to do all of this
 automatically. You give it the GitHub URL, and it will clone
 it locally.
 \kotlin{You may need to tell IntelliJ where you installed your JDK,
   otherwise everything should ``just work''.}
 \python{PyCharm might offer to set up a Python ``virtual environment''
-  for you, but you should let {\tt make} do it for you and then tell
+  for you, but you should instead let {\tt make} do it for you and then tell
   PyCharm to use the virtual environment you just made.}
 
 \python{Launch your favorite shell and go to the directory after the {\tt git
@@ -277,6 +278,37 @@ any cryptographic strength. (The text below was written by
 Josh Benaloh, a principal senior cryptographer at Microsoft Research,
 who also designed the cryptography for ElectionGuard.)
 
+%%%%%%%%%%%%
+The arithmetic is performed using a large 4096-bit prime $p$ which
+provides a substantial security margin beyond what can be attacked
+with today's computers.  We need to work in a multiplicative subgroup of
+$\mathbb{Z}_p=\{0, 1, 2, \cdots p-1\}$ -- the
+integers modulo $p$.  The largest multiplicative group within
+$\mathbb{Z}_p$ simply excludes zero and is denoted as
+$\mathbb{Z}_p^*=\{1, 2, \cdots p-1\}$.  However, to avoid having a
+large number of elements with special properties which distinguish
+them from others, we want our subgroup to be of {\em prime order}, and
+$\mathbb{Z}_p^*$ has $p-1$ elements – which will not be a prime number
+(except in the trivial case that $p=3$). Group theory tells us that
+the order of a subgroup must divide the order of the group, so the
+order of our subgroup must be a prime $q$ that is a divisor of $p-1$.
+
+We can improve efficiency without significantly impacting security by
+choosing a 256-bit prime $q$. A $q$ just below $2^{256}$ matches well
+with outputs from SHA-256, so we use the largest 256-bit prime
+$q=2^{256}-189$. The elements of our subgroup will be
+$\left\{g^0, g^1, \cdots g^{q-1}\right\}$ (all computed modulo $p$) where $g$ is
+a so-called {\em generator}.
+
+To make this possible, $q$ needs to be a factor of $p-1$.  We can then find a
+suitable generator by computing any $g=x^{(p-1)/q} \mod p$ that does
+not produce $g=1$.  We just
+choose $g=2^{(p-1)/q} \mod p$.  An important property of our subgroup is that for all
+elements $y$ in the subgroup, $y^q \mod p = 1$.  Be very careful to distinguish the two
+primes; while all computations in the base are modulo $p$, any
+computations done in the exponent should be modulo $q$.
+
+\if 0
 The reason for two primes is that if you are doing computations in the
 multiplicative subgroup modulo $p$, the elements are ${1,2,\ldots p-1}$. The
 identity $1$ is always special, but since $p-1$ will not be prime (unless
@@ -299,6 +331,7 @@ exponents rather than size $p$ exponents. This makes everything
 substantially more efficient. A $q$ just below $2^{256}$ also allows us to
 match exponents nicely with SHA-256 outputs. So using $q$ as the largest
 256-bit prime works very nicely.
+\fi
  
 
 One might then choose $p$ to be the largest 4096-bit prime such that
@@ -330,7 +363,7 @@ low-order bits be one, so this drove the selection of a suitable $p$.
 % during production use?
 
 \section{ElGamal encryption and related proofs}
-Normal ElGamal encryption, invented in 1985 by Tahir
+ElGamal encryption, invented in 1985 by Tahir
 ElGamal\footnote{\url{https://ieeexplore.ieee.org/document/1057074}}, is very straightforward. If
 you have a secret key $a$ in $[0,q)$, the corresponding public key is
 $g^a \mod p$, in $[0,p)$. (We'll stop writing the $p$, $q$, and mod
@@ -345,13 +378,19 @@ encryption).
 Because we're interested in having an {\em additive homomorphism},
 where we can ``add'' together two encryptions and get another
 encryption, we're going to use a variant called ``exponential
-ElGamal''. With this, we put the message $m$ we're encrypting
-into an exponent. For voting, these messages are mostly going to
-be 0-or-1, representing a voter's selection or absence of a selection,
-so it's important that the cryptosystem have an input that ensures
-a wide distribution of possible ciphertexts. That's a random number
-$r$ called a nonce. We can now define encryption and decryption as
-follows:
+ElGamal''. With this, we put the message $m$ we're encrypting into an
+exponent, {\em encoding} our message $m$ as $g^m$. For voting, these
+messages are mostly going to be 0-or-1, so the values we're encrypting
+are, for the most part, just $g^0$ and $g^1$. Later on, when we
+multiply these together, their exponents will add.
+
+One of the essential features of ElGamal is that it's a {\em
+  nondeterministic} cryptosystem, which means that even when we're
+encrypting pretty much the same values over and over again, we'll
+get a different ciphertext every time. This is accomplished by
+introducing a random number $r$, called a {\em nonce}, into the
+encryption as follows:
+
 \begin{align*}
 c &= \mathrm{Encrypt}(m, r, g^a) = \left<g^r, g^{ar}g^m\right> \\
 p &= \mathrm{Decrypt}(c, a) \\
@@ -385,9 +424,9 @@ c_1 \oplus c_2 &= \left<g^{r_1}, g^{a{r_1}}g^{m_1}\right> \oplus \left<g^{r_2}, 
 &= \left<g^{r_1 + r_2}, g^{a(r_1 + r_2)}g^{m_1 + m_2}\right>\\
 &= \mathrm{Encrypt}(m_1 + m_2, r_1 + r_2, g^a)
 \end{align*}
-Any intermediary can compute the homomorphic sum $(\oplus)$ of these encryptions
+Any intermediary can compute the encrypted sum $(\oplus)$ of these encryptions
 without needing to decrypt, and without needing to know the secret
-key.
+key. This is called an {\em additive homomorphism}.
 
 \subsection{Key sharing}
 \label{sec:keyshare}
@@ -395,14 +434,14 @@ key.
 The real ElectionGuard library supports a sophisticated ``threshold
 cryptography'' system
 which allows multiple trustees to each have a ``share'' of the
-election's key material. These shares are combined into a single
+election's secret key material. These shares are combined into a single
 public key, that all the voting machines use. For decryption
 operations, it takes a (predefined) $k$ of the $n$ trustees to
 collaborate together in order to do any decryption operation.
 This ``key ceremony'' is a bit complicated.
 
 As a warmup, you'll be implementing a simplified version, where
-all of the key shareholders need to work together. Here's how it
+all of the key shareholders need to collaborate. Here's how it
 works. Let's say we have $n$ trustees, and each has secret keys $a_i$
 and public keys $g^{a_i}$. We can define a joint public key by
 simply multiplying them all together:
@@ -413,8 +452,9 @@ k_{\mathrm{joint}}&= g^{a_1}g^{a_2} \cdots g^{a_n}\\
                                                                  
 Multiplying together the public keys yields a joint key, where we know
 the {\em formula} for the exponent, even though we can't derive the
-{\em value} for it. So, it a message is encrypted with this joint key,
-we need a way for the trustees to collaboratively decrypt it.
+{\em value} for it. So, if a message is encrypted with this joint key,
+we need a way for the trustees to collaboratively decrypt it, without
+revealing their secret keys.
 
 \begin{align*}
 \mathrm{PartialDecrypt}(c, a_i) &= \mathrm{PartialDecrypt}\left(\left<g^r, g^{(a_1 + a_2 \cdots a_n)r}g^m\right>,a_i\right) \\
@@ -670,8 +710,9 @@ Generally speaking, part~1 is a warm-up, where you're learning your
 way around the codebase, and part~2 is where you're dealing with
 ballots having k-of-n votes cast. Of note, in part~1, you'll start
 off by implementing ElGamal key sharing (see \ref{sec:keyshare}),
-which involves editing code in \python{elgamal.py}\kotlin{ElGamal.kt}.
-Everything else you'll do is in \python{simple\_elections.py}\kotlin{SimpleElections.kt}
+which involves editing code in \pythontt{elgamal.py}\kotlintt{ElGamal.kt}.
+Everything else you'll do is in
+\pythontt{simple\_elections.py}\kotlintt{SimpleElections.kt}
 and the associated unit test files.
 
 You should adopt a ``commit and push, early and often'' strategy.
@@ -708,7 +749,7 @@ on GitHub Actions.
 
 \paragraph{When you finish part 1.} You're going to want to use a Git
 tag. You do this after you're satisfied that you've completed the
-requirements. You then say {\tt git tag part1} and {\tt git push
+requirements. You then say \fbox{\tt git tag part1} and \fbox{\tt git push
   -{}-tags}. Alternately, you can use the GitHub website to create a
 ``release'', which in turn creates a Git tag. Your grader will
 examine your code, at this tag, and the output of GitHub Actions
