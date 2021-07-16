@@ -875,21 +875,27 @@ up through pre-computation.
   Ideally, the rest of the codebase should be completely unaware of
   the optimizations that you've done.
 
-\python{\item As you work on {\tt g\_pow\_p} and {\tt pow\_p} in {\tt
+\item \python{As you work on {\tt g\_pow\_p} and {\tt pow\_p} in {\tt
       group.py}, you'll most likely want to take advantage of the {\tt
       q\_to\_bytes} function, already present there, to
-    extract the bytes that you'll be using.}
-\kotlin{\item As you work on {\tt gPowP} and {\tt powP} in {\tt 
-    Group.kt}, you'll most likely want to take advantage of
-  BigInteger's {\tt toByteArray}
-  method\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/math/BigInteger.html\#toByteArray--}},
-  to extract the bytes that you'll be using.}
+      extract the bytes that you'll be using.}
+      \kotlin{As you work on {\tt gPowP} and {\tt powP} in {\tt 
+      Group.kt}, you'll most likely want to take advantage of
+      BigInteger's {\tt toByteArray}
+      method\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/math/BigInteger.html\#toByteArray--}},
+      to extract the bytes that you'll be using.}
+      Note that you won't always get 32 bytes out. Smaller numbers
+      will yield shorter arrays.
+
+\item What happens if somebody passes you an exponent that's outside
+  of $[0, Q)$? Is that even possible? You can always add a
+  precomputation step that computes your exponent mod $Q$.
 
 \item All the existing unit tests will help you validate that you
   haven't broken anything. Feel free to create additional unit tests
   specifically to exercise your optimized code against the original
   tried-and-true code. Once you're confident that your code is
-  correct, rerun your benchmark from part 2 to measure how much you
+  correct, rerun your benchmark from part~2 to measure how much you
   sped things up. You should make suitable edits to your {\tt
     README.md} file to indicate the performance boost that you were
   able to achieve.
