@@ -282,10 +282,10 @@ who also designed the cryptography for ElectionGuard.)
 The arithmetic is performed using a large 4096-bit prime $p$ which
 provides a substantial security margin beyond what can be attacked
 with today's computers.  We need to work in a multiplicative subgroup of
-$\mathbb{Z}_p=\{0, 1, 2, \cdots p-1\}$ -- the
+$\mathbb{Z}_p=\{0, 1, 2, \ldots p-1\}$ -- the
 integers modulo $p$.  The largest multiplicative group within
 $\mathbb{Z}_p$ simply excludes zero and is denoted as
-$\mathbb{Z}_p^*=\{1, 2, \cdots p-1\}$.  However, to avoid having a
+$\mathbb{Z}_p^*=\{1, 2, \ldots p-1\}$.  However, to avoid having a
 large number of elements with special properties which distinguish
 them from others, we want our subgroup to be of {\em prime order}, and
 $\mathbb{Z}_p^*$ has $p-1$ elements – which will not be a prime number
@@ -297,7 +297,7 @@ We can improve efficiency without significantly impacting security by
 choosing a 256-bit prime $q$. A $q$ just below $2^{256}$ matches well
 with outputs from SHA-256, so we use the largest 256-bit prime
 $q=2^{256}-189$. The elements of our subgroup will be
-$\left\{g^0, g^1, \cdots g^{q-1}\right\}$ (all computed modulo $p$) where $g$ is
+$\left\{g^0, g^1, \ldots g^{q-1}\right\}$ (all computed modulo $p$) where $g$ is
 a so-called {\em generator}.
 
 To make this possible, $q$ needs to be a factor of $p-1$.  We can then find a
@@ -814,5 +814,89 @@ asked to answer some questions, based on building a simple benchmark.
 We're only including \pythontt{mypy}\kotlin{the Kotlin compiler} once
 in the grading rubric, but if your part~1 submission is fine and your
 final submission has warnings or errors, we'll still take off the point.
+
+\section{Optional Part 3: Performance}
+
+{\em Your instructor will tell you whether this is required for you,
+or whether it's just here for you to play with on your own.}
+
+Right now, the code, as you have it is just using the modular
+exponentiation that's built into \python{Python / GnuMP}\kotlin{the
+  JVM's BigInteger class}, and those modular exponentiation operations
+are far-and-away the performance bottleneck in this computation.
+You can even imagine real-world scenarios, such as an in-precinct
+optical paper-ballot scanner, which might have a relatively limited
+CPU. If it's too slow, then voters might have to queue up to deposit
+their ballots!
+
+There are a {\em lot} of ways that you could improve the performance
+of ElectionGuard without changing what you're computing. For now,
+we'll focus on the easiest ``low hanging fruit'' optimization
+available to you. For {\em most} of the modular exponentiation
+computations, they tend to have either $g$ (the generator) or $g^a$
+(the public key) as their base, while the exponent is going to be
+an arbitrary number in $\mathbb{Z}_q^*$. We're going to speed these
+up through pre-computation.
+
+\begin{itemize}
+\item To optimize \pythontt{g\_pow\_p}\kotlintt{gPowP}, We might
+  precompute an array of exponentiations of $g$: $\left[g, g^2, g^4, \ldots,
+    g^{\left(2^{255}\right)}\right]$.
+  We can then decompose any value $x \in \mathbb{Z}_q^*$
+  into its component bits $x_{0},x_{1},\ldots x_{255}$
+  allowing us to restate $g^x = \prod_i g^{\left(x_i 2^i\right)}$. And if
+  any $x_i$ is zero, we can just skip over it and move on to the next one.
+  We might expect half of those $x_i$'s to be zero, so we only have to
+  do around 128 multiplies.
+
+\item Instead, we're going to do even better by doing additional
+  precomputation. Let's say you break down $x$ into its constituent bytes.
+  It only takes 32 bytes to represent any value in $\mathbb{Z}_q^*$.
+  For each of those 32 bytes, you need a separate array of 256 entries.
+  You look up the result for each byte, and multiply all those together.
+  A modular exponentation now requires only 32 lookups and 31 multiplies!
+
+\item The more effort and storage we dedicate to precomputation, the
+  faster we'll be able to compute our modular exponentiations, but
+  it's a time-space tradeoff with diminishing returns. For example, if
+  we instead did 10-bit lookups rather than 8-bit lookups, we would
+  now have 26 arrays of size $2^{10}$ rather than 32 arrays of size
+  $2^8$. Storage would grow by a factor of 3.25x and in return we
+  would only shrink the computation from 31 multiplies down to 25
+  multiplies.
+  
+\item You can repeat exactly the same process for using $g^a$ (the public
+  key) as the base, generating another table of precomputed
+  exponentiations. Exactly where should you put these acceleration
+  structures? How should you reengineer the existing \pythontt{pow\_p}\kotlintt{powP}\ function?
+  That's really up to you. You may choose to get fancy with
+  object-oriented subclassing of {\tt ElementModP}, or you may choose
+  to strategically deploy {\tt if} statements and/or global variables.
+  Ideally, the rest of the codebase should be completely unaware of
+  the optimizations that you've done.
+
+\python{\item As you work on {\tt g\_pow\_p} and {\tt pow\_p} in {\tt
+      group.py}, you'll most likely want to take advantage of the {\tt
+      q\_to\_bytes} function, already present there, to
+    extract the bytes that you'll be using.}
+\kotlin{\item As you work on {\tt gPowP} and {\tt powP} in {\tt 
+    Group.kt}, you'll most likely want to take advantage of
+  BigInteger's {\tt toByteArray}
+  method\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/math/BigInteger.html\#toByteArray--}},
+  to extract the bytes that you'll be using.}
+
+\item All the existing unit tests will help you validate that you
+  haven't broken anything. Feel free to create additional unit tests
+  specifically to exercise your optimized code against the original
+  tried-and-true code. Once you're confident that your code is
+  correct, rerun your benchmark from part 2 to measure how much you
+  sped things up. You should make suitable edits to your {\tt
+    README.md} file to indicate the performance boost that you were
+  able to achieve.
+\end{itemize}
+
+\noindent
+
+
 
 \end{document}

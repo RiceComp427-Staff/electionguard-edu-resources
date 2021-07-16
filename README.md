@@ -74,6 +74,8 @@ You're looking for any edits that seem weird or out of place. In particular, if 
 
 ## How might I stretch this assignment to three weeks?
 
-Part2 of this assignment is more work than part1. You could potentially split the work of part2 into a hypothetical part2 and part3. You could also extend the written questions, which ask the students to build a simple benchmarking tool, and have them do additional reading and writing in the world of cryptographic e2e voting. Alternately, you could build a simple GUI that presents a ballot to a voter and have the students wire it up with the rest of the project.
+The original design of this assignment is that the first two parts are done over two weeks by teams of two students.
+
+We've added an optional "Part3" to the handout which describes a performance optimization for accelerating modular exponentiation for the most common bases (the generator and the public key). You can delete this before handing it out to the students, use it as extra credit, or require it from your students.
 
 Another way you could add more work, which might be a good fit if you're using this assignment in a cryptography class, is to blank out the code to create and/or verify some of the Chaum-Pedersen proofs. Maybe you blank out the verifier for one and the generator for another. Then you can assign points to the relevant unit tests. This would let you reinforce something of the generality of these proofs, and you could leverage this as background when introducing other kinds of NIZKs / SNARKs later in the semester.
