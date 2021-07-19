@@ -855,6 +855,10 @@ up through pre-computation.
   For each of those 32 bytes, you need a separate array of 256 entries.
   You look up the result for each byte, and multiply all those together.
   A modular exponentation now requires only 32 lookups and 31 multiplies!
+  Even better: you shouldn't store each entry where all eight bits
+  are zero, because $g^0 = 1$. Instead, just add a special case
+  before the lookup, giving you a $1/256$ chance that you
+  don't need to do each of those multiplies.
 
 \item The more effort and storage we dedicate to precomputation, the
   faster we'll be able to compute our modular exponentiations, but
@@ -862,8 +866,11 @@ up through pre-computation.
   we instead did 10-bit lookups rather than 8-bit lookups, we would
   now have 26 arrays of size $2^{10}$ rather than 32 arrays of size
   $2^8$. Storage would grow by a factor of 3.25x and in return we
-  would only shrink the computation from 31 multiplies down to 25
-  multiplies.
+  would shrink the computation from 31 multiplies down to 25
+  multiplies. The real ElectionGuard will {\em probably} end up
+  doing 10-bit lookups, but it's much easier to implement the code
+  with 8-bit lookups because it's easier to convert an element to
+  an array of bytes, so that's what we're asking you to do.
   
 \item You can repeat exactly the same process for using $g^a$ (the public
   key) as the base, generating another table of precomputed
@@ -877,7 +884,7 @@ up through pre-computation.
 
 \item \python{As you work on {\tt g\_pow\_p} and {\tt pow\_p} in {\tt
       group.py}, you'll most likely want to take advantage of the {\tt
-      q\_to\_bytes} function, already present there, to
+      q\_to\_bytes} function, already present, to
       extract the bytes that you'll be using.}
       \kotlin{As you work on {\tt gPowP} and {\tt powP} in {\tt 
       Group.kt}, you'll most likely want to take advantage of
@@ -885,7 +892,8 @@ up through pre-computation.
       method\footnote{\url{https://docs.oracle.com/javase/8/docs/api/java/math/BigInteger.html\#toByteArray--}},
       to extract the bytes that you'll be using.}
       Note that you won't always get 32 bytes out. Smaller numbers
-      will yield shorter arrays.
+      will yield shorter arrays. You'll find it helpful to write
+      unit tests to exercise these cases.
 
 \item What happens if somebody passes you an exponent that's outside
   of $[0, Q)$? Is that even possible? You can always add a
