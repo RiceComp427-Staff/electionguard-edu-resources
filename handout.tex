@@ -334,7 +334,7 @@ match exponents nicely with SHA-256 outputs. So using $q$ as the largest
 \fi
  
 
-One might then choose $p$ to be the largest 4096-bit prime such that
+How do you select $p$? One might then choose $p$ to be the largest 4096-bit prime such that
 $p-1$ is a multiple of $q$ (which is what I did initially).  However,
 having $p$ be close to a power of 2 (or otherwise representable as a
 value of a polynomial with ``small'' coefficients) weakens its
@@ -777,7 +777,7 @@ free to import it. That includes functions from the ElectionGuard
 library, or otherwise available from the standard
 \python{Python}\kotlin{Kotlin} libraries.
 You shouldn't need to add or change any external dependencies in
-\python{Pipfile}\kotlin{build.gradle}.
+\pythontt{Pipfile}\kotlintt{build.gradle}.
 
 \paragraph{Am I allowed to add helper functions and/or additional unit
   tests?} Sure. Just don't change the type signatures or any of the
@@ -820,7 +820,7 @@ final submission has warnings or errors, we'll still take off the point.
 {\em Your instructor will tell you whether this is required for you,
 or whether it's just here for you to play with on your own.}
 
-Right now, the code, as you have it is just using the modular
+Right now, the code as you have it is using the modular
 exponentiation that's built into \python{Python / GnuMP}\kotlin{the
   JVM's BigInteger class}, and those modular exponentiation operations
 are far-and-away the performance bottleneck in this computation.
