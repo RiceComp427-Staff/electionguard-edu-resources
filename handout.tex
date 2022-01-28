@@ -867,10 +867,16 @@ up through pre-computation.
   now have 26 arrays of size $2^{10}$ rather than 32 arrays of size
   $2^8$. Storage would grow by a factor of 3.25x and in return we
   would shrink the computation from 31 multiplies down to 25
-  multiplies. The real ElectionGuard will {\em probably} end up
-  doing 10-bit lookups, but it's much easier to implement the code
-  with 8-bit lookups because it's easier to convert an element to
-  an array of bytes, so that's what we're asking you to do.
+  multiplies. The real ElectionGuard will (likely) end using different
+  table sizes for different applications. On an embedded computer with limited
+  memory, an 8-bit lookup table still yields a significant speedup,
+  which on a server-class machine processing millions of ballot
+  ciphertexts, any modest speedup we can get might be worth spending gigabytes
+  of memory on the precomputation.
+
+  For {\em you}, for this project, just do 8-bit lookups. This is
+  much easier to implement because it's easy to convert an element to
+  an array of bytes.
   
 \item You can repeat exactly the same process for using $g^a$ (the public
   key) as the base, generating another table of precomputed
